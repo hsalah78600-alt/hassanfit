@@ -1,0 +1,42 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isCoachOf(clientId) {
+      return signedIn() &&
+        get(/databases/$(database)/documents/users/$(clientId)).data.coachId == request.auth.uid;
+    }
+
+    // ملف كل مستخدم: العميل أو المدرب المربوط بيه فقط
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || resource.data.coachId == request.auth.uid);
+      allow create, update: if signedIn() && request.auth.uid == uid;
+      allow delete: if false;
+
+      // بيانات التمرين والأكل والقياسات
+      match /data/{docId} {
+        allow read: if signedIn() && (request.auth.uid == uid || isCoachOf(uid));
+        allow write: if signedIn() && request.auth.uid == uid;
+      }
+
+      // الرسايل بين العميل والمدرب
+      match /messages/{mid} {
+        allow read: if signedIn() && (request.auth.uid == uid || isCoachOf(uid));
+        allow create: if signedIn() && (
+          (request.auth.uid == uid && request.resource.data.from == 'client') ||
+          (isCoachOf(uid) && request.resource.data.from == 'coach')
+        );
+        allow update, delete: if false;
+      }
+    }
+
+    // أكواد دعوة المدربين
+    match /coachCodes/{code} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.coachId == request.auth.uid
+                    && !exists(/databases/$(database)/documents/coachCodes/$(code));
+      allow update, delete: if false;
+    }
+  }
+}
