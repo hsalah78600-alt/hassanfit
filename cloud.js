@@ -81,6 +81,20 @@ const Cloud = {
     return out;
   },
 
+  async getPlan(uid) {
+    const s = await sdk();
+    const d = await s.F.getDoc(s.F.doc(s.db, 'users', uid, 'plan', 'current'));
+    return d.exists() ? d.data() : null;
+  },
+  async setPlan(uid, obj) {
+    const s = await sdk();
+    await s.F.setDoc(s.F.doc(s.db, 'users', uid, 'plan', 'current'), clean(obj));
+  },
+  async watchPlan(uid, cb) {
+    const s = await sdk();
+    return s.F.onSnapshot(s.F.doc(s.db, 'users', uid, 'plan', 'current'), snap => cb(snap.exists() ? snap.data() : null), () => {});
+  },
+
   async watchClients(coachId, cb) {
     const s = await sdk();
     const q = s.F.query(s.F.collection(s.db, 'users'), s.F.where('coachId', '==', coachId));
