@@ -111,6 +111,8 @@ nav.tabs{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border
   display:grid;grid-template-columns:repeat(6,1fr);padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));z-index:20}
 nav.tabs button{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--muted);padding:4px 0;min-height:48px}
 nav.tabs button.on{color:var(--accent)}
+nav.tabs button{position:relative}
+.bdg{position:absolute;top:2px;inset-inline-start:calc(50% + 6px);background:#e5484d;color:#fff;font:700 10px/16px system-ui,sans-serif;min-width:16px;height:16px;border-radius:8px;text-align:center;font-style:normal;padding:0 3px}
 nav.tabs svg{width:22px;height:22px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:40;max-width:90%}
 .modal{position:fixed;inset:0;background:rgba(5,8,16,.6);z-index:30;display:flex;align-items:flex-end;justify-content:center}
@@ -354,7 +356,7 @@ function makeSummary(){
   let kc=0,nd=0;
   for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()-i);const t=dayTotals(dkey(d)).k;if(t){kc+=t;nd++}}
   return {ts:Date.now(),lastActive:dates[dates.length-1]||'',streak:si.n,weekN:ws.n,weekGoal:+S.profile.weekGoal||4,weekVol:Math.round(ws.vol),
-    weight:S.weights.length?S.weights[S.weights.length-1].kg:S.profile.weight,kcalAvg:nd?Math.round(kc/nd):0,workouts:S.workouts.length};
+    weight:S.weights.length?S.weights[S.weights.length-1].kg:S.profile.weight,kcalAvg:nd?Math.round(kc/nd):0,workouts:S.workouts.length,lastWorkout:S.workouts.length?{name:S.workouts[S.workouts.length-1].name||''}:null};
 }
 function schedSync(){
   if(!C.user||!CLOUD||isCoach())return;
@@ -528,7 +530,7 @@ function vHome(){
   const {n,set}=streakInfo();const {pr,i}=nextDay();const day=pr.days[i];
   const t=targets();const tot=dayTotals();const k=dkey();
   const ws=weekStats();const goal=+S.profile.weekGoal||4;
-  let h=homeNotice()+planCards('home')+'<div class="card"><div class="streak"><div class="flame num">'+n+'</div><div><h3 style="margin:0">'+(n?_('يوم متتالي'):_('ابدأ سلسلتك النهاردة'))+'</h3><div class="muted">'+(set.has(k)?_('نشاطك النهاردة اتسجّل'):_('لسه معملتش نشاط النهاردة'))+'</div></div></div>'+weekDots(set)+
+  let h=ntInboxHtml()+homeNotice()+planCards('home')+'<div class="card"><div class="streak"><div class="flame num">'+n+'</div><div><h3 style="margin:0">'+(n?_('يوم متتالي'):_('ابدأ سلسلتك النهاردة'))+'</h3><div class="muted">'+(set.has(k)?_('نشاطك النهاردة اتسجّل'):_('لسه معملتش نشاط النهاردة'))+'</div></div></div>'+weekDots(set)+
    _('<div class="row sp muted" style="margin-top:12px"><span>هدف الأسبوع</span><span class="num">')+ws.n+' / '+goal+'</span></div><div class="bar'+(ws.n>=goal?' ok':'')+'" style="margin-top:4px"><i style="width:'+Math.min(100,ws.n/goal*100)+'%"></i></div></div>';
   if(S.active)h+=_('<div class="card"><h3>تمرين شغّال: ')+esc(S.active.name)+'</h3><div class="muted" style="margin-bottom:12px">'+activeSets(S.active)+_n(activeSets(S.active),' مجموعة اتسجلت</div><button class="btn block" data-act="tab" data-v="train">كمّل التمرين</button></div>');
   else h+=_('<div class="card"><div class="muted">تمرين النهاردة · ')+esc(pr.n)+'</div><h3 style="margin:2px 0 8px">'+esc(day.n)+'</h3><div class="muted" style="margin-bottom:12px">'+day.ex.map(exName).join(' · ')+'</div><button class="btn block" data-act="start" data-i="'+i+_('">ابدأ التمرين</button></div>');
@@ -642,6 +644,78 @@ const AUTHERR={'auth/invalid-credential':_('الإيميل أو الباسورد
 function isStandalone(){try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}}
 function isCoach(){return !!(C.profile&&C.profile.role==='coach')}
 function installHint(){return /iphone|ipad|ipod/i.test(navigator.userAgent)?_('على iPhone: افتح الرابط في Safari، اضغط زر المشاركة ثم «إضافة إلى الشاشة الرئيسية».'):_('على أندرويد: من قايمة Chrome اختار «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».')}
+/* ----- in-app notifications ----- */
+const NT={items:[],seen:{},uid:undefined};
+const ntKey=()=>'hassanfit.nt.'+(C.user?C.user.uid:'x');
+function ntState(){const u=C.user?C.user.uid:'x';if(NT.uid!==u){NT.uid=u;let o={};try{o=JSON.parse(localStorage.getItem(ntKey())||'{}')}catch(e){}NT.seen=o.seen||{};NT.items=o.items||[]}return NT}
+function ntPersist(){try{localStorage.setItem(ntKey(),JSON.stringify({seen:NT.seen,items:NT.items.slice(0,30)}))}catch(e){}}
+function ntAlert(it){
+  toast(it.txt);
+  try{navigator.vibrate&&navigator.vibrate(120)}catch(e){}
+  try{const a=new (window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=880;g.gain.value=.05;o.start();o.stop(a.currentTime+.14)}catch(e){}
+  try{if(document.hidden&&window.Notification&&Notification.permission==='granted'){
+    const o={body:it.txt,icon:'icon-192.png',tag:it.id};
+    if(navigator.serviceWorker&&navigator.serviceWorker.ready)navigator.serviceWorker.ready.then(r=>r.showNotification('Hassanfit',o)).catch(()=>{});else new Notification('Hassanfit',o)}}catch(e){}
+}
+function ntPush(it){
+  ntState();if(NT.items.some(x=>x.id===it.id))return;
+  NT.items.unshift(Object.assign({read:false},it));NT.items=NT.items.slice(0,30);ntPersist();
+  ntAlert(it);paintBadges();refreshInbox();
+}
+function ntRead(kind,uid){
+  ntState();let ch=false;
+  NT.items.forEach(x=>{if(!x.read&&(!kind||x.kind===kind)&&(!uid||x.uid===uid)){x.read=true;ch=true}});
+  if(ch){ntPersist();paintBadges()}
+}
+function paintBadges(){
+  ntState();const n=NT.items.filter(x=>!x.read).length;
+  const b=$(isCoach()?'#nav button[data-v="clients"]':'#nav button[data-v="coach"]');if(!b)return;
+  const old=b.querySelector('.bdg');if(old)old.remove();
+  if(n){const i=document.createElement('i');i.className='bdg';i.textContent=n>9?'9+':String(n);b.appendChild(i)}
+}
+function refreshInbox(){
+  if(U.modal)return;
+  if(isCoach()){if(U.cc.tab==='clients'&&!U.cc.sel&&!U.cc.edit)renderCoachApp()}
+  else if(S.tab==='home'&&!S.active)render();
+}
+function ntInboxHtml(){
+  ntState();const un=NT.items.filter(x=>!x.read).slice(0,5);
+  const canPerm=!!(window.Notification&&Notification.permission==='default');
+  if(!un.length&&!canPerm)return '';
+  let h='<div class="card">';
+  if(un.length){
+    h+='<div class="row sp"><h3 style="margin:0">'+_('إشعارات جديدة')+'</h3><button class="btn alt sm" data-act="ntclear">'+_('تمام')+'</button></div>';
+    h+=un.map(x=>'<button class="item" style="width:100%;text-align:start;background:none;border:0;color:inherit" '+(isCoach()?'data-act="copen" data-id="'+esc(x.uid)+'"':'data-act="tab" data-v="coach"')+'><div class="grow">'+esc(x.txt)+'<div class="muted">'+esc(ago(x.ts))+'</div></div></button>').join('');
+  }
+  if(canPerm)h+='<button class="btn alt block" style="margin-top:'+(un.length?'10':'0')+'px" data-act="ntperm">'+_('فعّل تنبيهات الجهاز')+'</button>';
+  return h+'</div>';
+}
+function ntClientMsgs(m){
+  ntState();const cm=m.filter(x=>x.from==='coach'),last=cm.length?cm[cm.length-1].ts:0;
+  if(NT.seen.cm===undefined){NT.seen.cm=last;ntPersist();return}
+  const fresh=cm.filter(x=>x.ts>NT.seen.cm);if(!fresh.length)return;
+  NT.seen.cm=last;ntPersist();
+  if(S.tab==='coach'&&!document.hidden)return;
+  fresh.slice(-3).forEach(x=>ntPush({id:'cm'+x.ts,kind:'msg',ts:x.ts,txt:_('رسالة من مدربك')+': '+String(x.txt).slice(0,80)}));
+}
+function ntCoach(list){
+  ntState();let ch=false;
+  list.forEach(c=>{
+    const nm=c.name||_('عميل'),s=c.summary||{},lm=c.lastMsg,km='m'+c.uid,kw='w'+c.uid;
+    if(lm&&lm.from==='client'&&lm.ts){
+      if(NT.seen[km]===undefined&&NT.seen._i)NT.seen[km]=0;
+      if(NT.seen[km]===undefined){NT.seen[km]=lm.ts;ch=true}
+      else if(lm.ts>NT.seen[km]){NT.seen[km]=lm.ts;ch=true;
+        if(!(U.cc.sel&&U.cc.sel.uid===c.uid&&!document.hidden))ntPush({id:'m'+c.uid+'_'+lm.ts,kind:'msg',uid:c.uid,ts:lm.ts,txt:_('رسالة من ')+nm+': '+String(lm.txt||'').slice(0,80)})}
+    }
+    const wk=+s.workouts||0;
+    if(NT.seen[kw]===undefined){NT.seen[kw]=wk;ch=true}
+    else if(wk>NT.seen[kw]){NT.seen[kw]=wk;ch=true;ntPush({id:'w'+c.uid+'_'+wk,kind:'wk',uid:c.uid,ts:s.ts||Date.now(),txt:nm+' '+_('خلّص تمرين')+(s.lastWorkout&&s.lastWorkout.name?': '+s.lastWorkout.name:'')})}
+    else if(wk<NT.seen[kw]){NT.seen[kw]=wk;ch=true}
+  });
+  if(!NT.seen._i){NT.seen._i=1;ch=true}
+  if(ch)ntPersist();
+}
 function stopWatchers(){C.unsubs.forEach(u=>{try{u()}catch(e){}});C.unsubs=[];closeClient()}
 function closeClient(){if(U.cc.unMsg){try{U.cc.unMsg()}catch(e){}U.cc.unMsg=null}}
 function msgsHtml(list,me){
@@ -704,13 +778,13 @@ async function afterLogin(user){
     if(pr.role==='coach'){
       if(!pr.code)await ensureCode();
       stopWatchers();
-      CLOUD.watchClients(user.uid,list=>{C.clients=list;if(isCoach()&&U.cc.tab==='clients'&&!U.cc.sel)renderCoachApp()}).then(u=>C.unsubs.push(u)).catch(()=>{});
+      CLOUD.watchClients(user.uid,list=>{C.clients=list;ntCoach(list);if(isCoach()&&U.cc.tab==='clients'&&!U.cc.sel)renderCoachApp()}).then(u=>C.unsubs.push(u)).catch(()=>{});
     }else{
       if(S.owner&&S.owner!==user.uid){const th=S.settings;S=defState();S.settings=th;sync.last={};C.plan=null;syncPlanProgram();applyTheme()}
       S.owner=user.uid;saveLocal();
       await loadCloud();
       stopWatchers();
-      CLOUD.watchMessages(user.uid,m=>{C.msgs=m;updateMsgs()}).then(u=>C.unsubs.push(u)).catch(()=>{});
+      CLOUD.watchMessages(user.uid,m=>{C.msgs=m;updateMsgs();ntClientMsgs(m)}).then(u=>C.unsubs.push(u)).catch(()=>{});
       CLOUD.watchPlan(user.uid,p=>{applyPlan(p);render()}).then(u=>C.unsubs.push(u)).catch(()=>{});
     }
   }catch(e){toast(_('تعذر الاتصال بالسيرفر'))}
@@ -771,7 +845,7 @@ async function syncNow(){
 async function sendMsg(from,uid){
   const el=$('#cmsg');const txt=el&&el.value.trim();if(!txt||!uid)return;
   el.value='';
-  try{await CLOUD.sendMessage(uid,{from,txt,ts:Date.now()})}catch(e){toast(_('تعذر إرسال الرسالة'))}
+  try{const ts=Date.now();await CLOUD.sendMessage(uid,{from,txt,ts});if(from==='client')CLOUD.setProfile(uid,{lastMsg:{from:'client',txt:txt.slice(0,120),ts}}).catch(()=>{})}catch(e){toast(_('تعذر إرسال الرسالة'))}
 }
 function installApp(){const p=U.deferred;if(!p)return;p.prompt();p.userChoice&&p.userChoice.then(()=>{U.deferred=null;render()})}
 function copyInv(){
@@ -788,11 +862,11 @@ function renderCoachApp(){
   $('#main').innerHTML=h;
   const nav=$('#nav');nav.style.gridTemplateColumns='repeat(3,1fr)';
   nav.innerHTML=[['clients',_('العملاء'),'coach'],['code',_('كودي'),'key'],['acct',_('حسابي'),'acct']].map(x=>'<button class="'+(t===x[0]?'on':'')+'" data-act="ctab" data-v="'+x[0]+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+IC[x[2]]+'</svg>'+x[1]+'</button>').join('');
-  renderLayer();setSync();
+  renderLayer();setSync();paintBadges();
 }
 function vClients(){
   const L=C.clients.slice().sort((a,b)=>(((a.summary||{}).lastActive||'')<((b.summary||{}).lastActive||''))?-1:1);
-  let h=_('<h2>عملاؤك</h2>');
+  let h=ntInboxHtml()+_('<h2>عملاؤك</h2>');
   if(!L.length)return h+_('<div class="card muted">لسه محدش ربط نفسه بيك. ابعت كودك لعملائك من تبويب «كودي».</div>');
   const today=parseKey(dkey());
   const idleOf=c=>{const la=(c.summary||{}).lastActive;return la?Math.round((today-parseKey(la))/864e5):null};
@@ -807,7 +881,7 @@ function vClients(){
 }
 async function openClient(id){
   const c=C.clients.find(x=>x.uid===id);if(!c)return;
-  closeClient();U.cc.edit=null;U.cc.sel=c;U.cc.detail={loading:true};U.cc.msgs=[];renderCoachApp();window.scrollTo(0,0);
+  ntRead(null,id);closeClient();U.cc.edit=null;U.cc.sel=c;U.cc.detail={loading:true};U.cc.msgs=[];renderCoachApp();window.scrollTo(0,0);
   try{const [docs,plan]=await Promise.all([CLOUD.readChunks(id),CLOUD.getPlan(id).catch(()=>null)]);const T=defState();const ok=applyChunksTo(T,docs);U.cc.detail={T,ok,plan}}
   catch(e){U.cc.detail={err:true}}
   if(U.cc.sel&&U.cc.sel.uid===id)renderCoachApp();
@@ -1115,7 +1189,7 @@ function render(){
   $('#main').innerHTML=views[S.tab]();
   $('#nav').style.gridTemplateColumns='';
   $('#nav').innerHTML=TABS.map(t=>'<button class="'+(S.tab===t[0]?'on':'')+'" data-act="tab" data-v="'+t[0]+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+IC[t[0]]+'</svg>'+t[1]+'</button>').join('');
-  renderLayer();setSync();tick();
+  renderLayer();setSync();tick();if(S.tab==='coach')ntRead('msg');paintBadges();
   if(S.tab==='more'&&S.sub==='tools')toolCalc();
 }
 
@@ -1276,6 +1350,8 @@ document.addEventListener('click',function(ev){
    case 'msend':sendMsg('client',C.user&&C.user.uid);break;
    case 'ctab':U.cc.edit=null;U.modal=null;closeClient();U.cc.tab=d.v;U.cc.sel=null;U.cc.detail=null;renderCoachApp();window.scrollTo(0,0);break;
    case 'copen':openClient(d.id);break;
+   case 'ntclear':ntRead();refreshInbox();break;
+   case 'ntperm':try{Notification.requestPermission().then(r=>{toast(r==='granted'?_('التنبيهات اتفعّلت'):_('التنبيهات مش متاحة على الجهاز ده'));refreshInbox();if(S.tab==='home'||isCoach())render()})}catch(e){toast(_('التنبيهات مش متاحة على الجهاز ده'))}break;
    case 'cplanedit':{const d0=U.cc.detail;if(!d0||!d0.T)break;const pl=d0.plan?JSON.parse(JSON.stringify(d0.plan)):{};pl.targets=pl.targets||{};pl.trainDays=pl.trainDays||[];pl.meals=pl.meals||[];pl.program=pl.program||null;pl.note=pl.note||'';pl.weekGoal=pl.weekGoal||'';U.cc.edit=pl;U.cc.fq='';U.cc.fqty='100';U.cc.fcat='all';renderCoachApp();window.scrollTo(0,0);break}
    case 'cplancancel':U.cc.edit=null;U.modal=null;renderCoachApp();window.scrollTo(0,0);break;
    case 'cplansave':saveClientPlan();break;
