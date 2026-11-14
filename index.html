@@ -38,7 +38,8 @@ button{cursor:pointer}
 header.top{display:flex;align-items:center;justify-content:space-between;padding:18px 2px 10px;gap:10px}
 .logo{font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:-.5px;direction:ltr}
 .logo b{color:var(--accent);font-weight:700}
-.date{color:var(--muted);font-size:12px;text-align:left}
+.date{color:var(--muted);font-size:12px;text-align:end}
+.langbtn{background:var(--surface2);color:var(--fg);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;min-height:32px;min-width:44px}
 h2{font-family:var(--display);font-size:20px;margin:18px 2px 10px;font-weight:600;text-wrap:balance}
 h3{font-family:var(--display);font-size:16px;margin:0 0 8px;font-weight:600}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
@@ -62,7 +63,7 @@ input,select,textarea{background:var(--bg);border:1px solid var(--line);border-r
 textarea{resize:vertical;min-height:70px}
 input,select,textarea{font-size:16px}
 input[type=checkbox]{width:22px;min-height:22px;flex:none}
-.card.btnlike{display:block;width:100%;text-align:right;color:var(--fg)}
+.card.btnlike{display:block;width:100%;text-align:start;color:var(--fg)}
 .pill.bad{background:var(--danger);color:var(--bg)}
 .pill.good{background:var(--ok);color:var(--bg)}
 .code{font-family:var(--display);font-size:40px;letter-spacing:6px;direction:ltr;text-align:center;font-weight:700;margin:6px 0}
@@ -127,7 +128,7 @@ nav.tabs svg{width:22px;height:22px}
 .vols i{display:block;width:100%;background:var(--accent);border-radius:6px 6px 0 0;min-height:3px}
 .vols i.fl{background:var(--flame)}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:right;min-height:84px;display:flex;flex-direction:column;gap:2px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:start;min-height:84px;display:flex;flex-direction:column;gap:2px}
 .tile b{font-family:var(--display);font-size:15px;font-weight:600}
 .back{background:none;border:0;color:var(--accent);padding:12px 2px 0;font-weight:600}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}
@@ -157,7 +158,7 @@ nav.tabs svg{width:22px;height:22px}
 </head>
 <body>
 <div id="app" dir="rtl" lang="ar">
-  <header class="top"><div class="logo">Hassan<b>fit</b></div><div><div class="date" id="today"></div><div class="sync" id="sync"></div></div></header>
+  <header class="top"><div class="logo">Hassan<b>fit</b></div><div><div class="date" id="today"></div><div class="sync" id="sync"></div></div><button class="langbtn" id="langbtn" type="button">EN</button></header>
   <main id="main"></main>
   <nav class="tabs" id="nav"></nav>
   <div id="layer"></div>
@@ -168,10 +169,17 @@ nav.tabs svg{width:22px;height:22px}
 <script src="firebase-config.js"></script>
 <script type="module" src="cloud.js"></script>
 <script src="foods.js"></script>
+<script src="lang-en.js"></script>
 <script>
 (function(){
 'use strict';
-const $=s=>document.querySelector(s);
+let LANG='ar';try{const sl=localStorage.getItem('hassanfit.lang');if(sl==='en'||sl==='ar')LANG=sl}catch(e){}
+const _=s=>(LANG==='en'&&window.EN&&Object.prototype.hasOwnProperty.call(window.EN,s))?window.EN[s]:s;
+const _n=(n,s)=>{const e=_(s);if(LANG!=='en'||e.indexOf('|')<0)return e;const p=e.split('|');return +n===1?p[0]:p[1]};
+document.documentElement.lang=LANG;document.documentElement.dir=LANG==='ar'?'rtl':'ltr';
+{const ap=document.getElementById('app');if(ap){ap.lang=LANG;ap.dir=LANG==='ar'?'rtl':'ltr'}
+ const lb=document.getElementById('langbtn');if(lb){lb.textContent=LANG==='ar'?'EN':'\u0639\u0631\u0628\u064a';lb.setAttribute('aria-label',LANG==='ar'?'Switch to English':'\u0627\u0644\u062a\u0628\u062f\u064a\u0644 \u0625\u0644\u0649 \u0627\u0644\u0639\u0631\u0628\u064a\u0629');
+  lb.onclick=()=>{try{localStorage.setItem('hassanfit.lang',LANG==='ar'?'en':'ar')}catch(e){};location.reload()}}}const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Math.round(n||0).toLocaleString('en');
 const f1=n=>(Math.round((n||0)*10)/10).toString();
@@ -180,46 +188,46 @@ const dkey=(d=new Date())=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.get
 const parseKey=k=>{const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const KEY='hassanfit.v2',KEY1='hassanfit.v1';
-const AR=(d,o)=>d.toLocaleDateString('ar-EG-u-nu-latn',o);
+const AR=(d,o)=>d.toLocaleDateString(LANG==='en'?'en-US':'ar-EG-u-nu-latn',o);
 
 /* ================= data ================= */
 const EXS=[
-['bench','بنش بريس بالبار','صدر','بار'],['incbar','بنش مائل بالبار','صدر','بار'],['incdb','بنش دامبل مائل','صدر','دامبل'],['dbbench','بنش دامبل مسطح','صدر','دامبل'],
-['pushup','ضغط Push-up','صدر','وزن الجسم'],['declpush','ضغط بالرجل مرفوعة','صدر','وزن الجسم'],['fly','فلاي كابل','صدر','كابل'],['pecdeck','فلاي جهاز','صدر','جهاز'],
-['chestpress','ضغط صدر جهاز','صدر','جهاز'],['dips','متوازي Dips','صدر','وزن الجسم'],['cablecross','كروس أوفر كابل','صدر','كابل'],
-['pullup','بول أب','ضهر','وزن الجسم'],['chinup','شين أب','ضهر','وزن الجسم'],['row','سحب بار منحني','ضهر','بار'],['dbrow','سحب دامبل','ضهر','دامبل'],
-['lat','لات بول داون','ضهر','كابل'],['crow','سحب كابل جلوس','ضهر','كابل'],['tbar','تي بار رو','ضهر','بار'],['deadlift','ديدلفت','ضهر','بار'],
-['facepull','فيس بول','ضهر','كابل'],['shrug','ترابس دامبل','ضهر','دامبل'],['hyper','هايبر اكستنشن','ضهر','وزن الجسم'],['invrow','سحب أفقي بوزن الجسم','ضهر','وزن الجسم'],
-['squat','سكوات','رجل','بار'],['front','سكوات أمامي','رجل','بار'],['legp','ليج بريس','رجل','جهاز'],['hack','هاك سكوات','رجل','جهاز'],['rdl','رومانيان ديدلفت','رجل','بار'],
-['legc','ليج كيرل','رجل','جهاز'],['legext','ليج اكستنشن','رجل','جهاز'],['lunge','لانجز','رجل','دامبل'],['bulg','بلغاري سبليت سكوات','رجل','دامبل'],
-['calf','سمانة واقف','رجل','جهاز'],['calfs','سمانة جالس','رجل','جهاز'],['hipthrust','هيب ثراست','رجل','بار'],['gobl','جوبلت سكوات','رجل','دامبل'],['stepup','ستيب أب','رجل','دامبل'],
-['ohp','ضغط كتف دامبل','كتف','دامبل'],['barohp','ضغط كتف بار','كتف','بار'],['arnold','أرنولد برس','كتف','دامبل'],['latr','رفرفة جانبي','كتف','دامبل'],
-['rear','رفرفة خلفي','كتف','دامبل'],['frontr','رفرفة أمامي','كتف','دامبل'],['upright','سحب عمودي','كتف','بار'],['pike','بايك بوش أب','كتف','وزن الجسم'],
-['bic','بايسبس دامبل','دراع','دامبل'],['barcurl','بايسبس بار','دراع','بار'],['ham','هامر كيرل','دراع','دامبل'],['preacher','بريشر كيرل','دراع','بار'],
-['conc','كيرل تركيز','دراع','دامبل'],['tri','ترايسبس بوش داون','دراع','كابل'],['skull','سكل كراشر','دراع','بار'],['ohtri','ترايسبس أوفر هيد','دراع','دامبل'],
-['closegrip','بنش ضيق','دراع','بار'],['kick','كيك باك','دراع','دامبل'],
-['crunch','كرانش','بطن','وزن الجسم'],['leg','رفع رجل','بطن','وزن الجسم'],['plank','بلانك (ثواني)','بطن','وزن الجسم'],['cabcrunch','كرانش كابل','بطن','كابل'],
-['russian','روسيان تويست','بطن','وزن الجسم'],['abwheel','عجلة بطن','بطن','أخرى'],['hangleg','رفع رجل معلق','بطن','وزن الجسم'],['mount','ماونتن كلايمبر','بطن','وزن الجسم'],
-['burpee','بيربي','جسم كامل','وزن الجسم'],['kbswing','كيتل بيل سوينج','جسم كامل','كيتل بيل'],['thruster','ثراستر','جسم كامل','دامبل'],['farmer','مشي المزارع','جسم كامل','دامبل']
+['bench',_('بنش بريس بالبار'),'صدر',_('بار')],['incbar',_('بنش مائل بالبار'),'صدر',_('بار')],['incdb',_('بنش دامبل مائل'),'صدر',_('دامبل')],['dbbench',_('بنش دامبل مسطح'),'صدر',_('دامبل')],
+['pushup',_('ضغط Push-up'),'صدر',_('وزن الجسم')],['declpush',_('ضغط بالرجل مرفوعة'),'صدر',_('وزن الجسم')],['fly',_('فلاي كابل'),'صدر',_('كابل')],['pecdeck',_('فلاي جهاز'),'صدر',_('جهاز')],
+['chestpress',_('ضغط صدر جهاز'),'صدر',_('جهاز')],['dips',_('متوازي Dips'),'صدر',_('وزن الجسم')],['cablecross',_('كروس أوفر كابل'),'صدر',_('كابل')],
+['pullup',_('بول أب'),'ضهر',_('وزن الجسم')],['chinup',_('شين أب'),'ضهر',_('وزن الجسم')],['row',_('سحب بار منحني'),'ضهر',_('بار')],['dbrow',_('سحب دامبل'),'ضهر',_('دامبل')],
+['lat',_('لات بول داون'),'ضهر',_('كابل')],['crow',_('سحب كابل جلوس'),'ضهر',_('كابل')],['tbar',_('تي بار رو'),'ضهر',_('بار')],['deadlift',_('ديدلفت'),'ضهر',_('بار')],
+['facepull',_('فيس بول'),'ضهر',_('كابل')],['shrug',_('ترابس دامبل'),'ضهر',_('دامبل')],['hyper',_('هايبر اكستنشن'),'ضهر',_('وزن الجسم')],['invrow',_('سحب أفقي بوزن الجسم'),'ضهر',_('وزن الجسم')],
+['squat',_('سكوات'),'رجل',_('بار')],['front',_('سكوات أمامي'),'رجل',_('بار')],['legp',_('ليج بريس'),'رجل',_('جهاز')],['hack',_('هاك سكوات'),'رجل',_('جهاز')],['rdl',_('رومانيان ديدلفت'),'رجل',_('بار')],
+['legc',_('ليج كيرل'),'رجل',_('جهاز')],['legext',_('ليج اكستنشن'),'رجل',_('جهاز')],['lunge',_('لانجز'),'رجل',_('دامبل')],['bulg',_('بلغاري سبليت سكوات'),'رجل',_('دامبل')],
+['calf',_('سمانة واقف'),'رجل',_('جهاز')],['calfs',_('سمانة جالس'),'رجل',_('جهاز')],['hipthrust',_('هيب ثراست'),'رجل',_('بار')],['gobl',_('جوبلت سكوات'),'رجل',_('دامبل')],['stepup',_('ستيب أب'),'رجل',_('دامبل')],
+['ohp',_('ضغط كتف دامبل'),'كتف',_('دامبل')],['barohp',_('ضغط كتف بار'),'كتف',_('بار')],['arnold',_('أرنولد برس'),'كتف',_('دامبل')],['latr',_('رفرفة جانبي'),'كتف',_('دامبل')],
+['rear',_('رفرفة خلفي'),'كتف',_('دامبل')],['frontr',_('رفرفة أمامي'),'كتف',_('دامبل')],['upright',_('سحب عمودي'),'كتف',_('بار')],['pike',_('بايك بوش أب'),'كتف',_('وزن الجسم')],
+['bic',_('بايسبس دامبل'),'دراع',_('دامبل')],['barcurl',_('بايسبس بار'),'دراع',_('بار')],['ham',_('هامر كيرل'),'دراع',_('دامبل')],['preacher',_('بريشر كيرل'),'دراع',_('بار')],
+['conc',_('كيرل تركيز'),'دراع',_('دامبل')],['tri',_('ترايسبس بوش داون'),'دراع',_('كابل')],['skull',_('سكل كراشر'),'دراع',_('بار')],['ohtri',_('ترايسبس أوفر هيد'),'دراع',_('دامبل')],
+['closegrip',_('بنش ضيق'),'دراع',_('بار')],['kick',_('كيك باك'),'دراع',_('دامبل')],
+['crunch',_('كرانش'),'بطن',_('وزن الجسم')],['leg',_('رفع رجل'),'بطن',_('وزن الجسم')],['plank',_('بلانك (ثواني)'),'بطن',_('وزن الجسم')],['cabcrunch',_('كرانش كابل'),'بطن',_('كابل')],
+['russian',_('روسيان تويست'),'بطن',_('وزن الجسم')],['abwheel',_('عجلة بطن'),'بطن',_('أخرى')],['hangleg',_('رفع رجل معلق'),'بطن',_('وزن الجسم')],['mount',_('ماونتن كلايمبر'),'بطن',_('وزن الجسم')],
+['burpee',_('بيربي'),'جسم كامل',_('وزن الجسم')],['kbswing',_('كيتل بيل سوينج'),'جسم كامل',_('كيتل بيل')],['thruster',_('ثراستر'),'جسم كامل',_('دامبل')],['farmer',_('مشي المزارع'),'جسم كامل',_('دامبل')]
 ].map(a=>({id:a[0],n:a[1],m:a[2],e:a[3]}));
 const MUSCLES=['صدر','ضهر','رجل','كتف','دراع','بطن','جسم كامل'];
 const PROGRAMS={
- ppl:{n:'دفع / سحب / رجل',days:[
-  {n:'يوم الدفع',ex:['bench','incdb','ohp','latr','tri']},{n:'يوم السحب',ex:['pullup','row','crow','rear','bic']},{n:'يوم الرجل',ex:['squat','legp','rdl','legc','calf']}]},
- fb:{n:'فل بادي 3 أيام',days:[
-  {n:'فل بادي أ',ex:['squat','bench','row','ohp','crunch']},{n:'فل بادي ب',ex:['legp','incdb','lat','rdl','bic']},{n:'فل بادي ج',ex:['squat','pushup','pullup','latr','tri']}]},
- ul:{n:'علوي / سفلي',days:[
-  {n:'جزء علوي',ex:['bench','row','ohp','lat','bic','tri']},{n:'جزء سفلي',ex:['squat','rdl','legp','legc','calf','crunch']}]},
- bro:{n:'عضلة في اليوم (5 أيام)',days:[
+ ppl:{n:_('دفع / سحب / رجل'),days:[
+  {n:_('يوم الدفع'),ex:['bench','incdb','ohp','latr','tri']},{n:_('يوم السحب'),ex:['pullup','row','crow','rear','bic']},{n:_('يوم الرجل'),ex:['squat','legp','rdl','legc','calf']}]},
+ fb:{n:_('فل بادي 3 أيام'),days:[
+  {n:_('فل بادي أ'),ex:['squat','bench','row','ohp','crunch']},{n:_('فل بادي ب'),ex:['legp','incdb','lat','rdl','bic']},{n:_('فل بادي ج'),ex:['squat','pushup','pullup','latr','tri']}]},
+ ul:{n:_('علوي / سفلي'),days:[
+  {n:_('جزء علوي'),ex:['bench','row','ohp','lat','bic','tri']},{n:_('جزء سفلي'),ex:['squat','rdl','legp','legc','calf','crunch']}]},
+ bro:{n:_('عضلة في اليوم (5 أيام)'),days:[
   {n:'صدر',ex:['bench','incdb','fly','dips','pushup']},{n:'ضهر',ex:['deadlift','pullup','row','lat','facepull']},{n:'كتف',ex:['barohp','ohp','latr','rear','shrug']},
   {n:'دراع',ex:['barcurl','ham','skull','tri','closegrip']},{n:'رجل',ex:['squat','legp','lunge','legc','calf']}]},
- home:{n:'بيتي بدون أجهزة',days:[
-  {n:'بيت 1',ex:['pushup','lunge','invrow','plank','mount']},{n:'بيت 2',ex:['pike','stepup','declpush','russian','crunch']},{n:'بيت 3',ex:['burpee','lunge','pushup','invrow','plank']}]},
- s5:{n:'ستارتر 5×5',sets:5,days:[
-  {n:'ستارتر أ',ex:['squat','bench','row']},{n:'ستارتر ب',ex:['squat','barohp','deadlift']}]}
+ home:{n:_('بيتي بدون أجهزة'),days:[
+  {n:_('بيت 1'),ex:['pushup','lunge','invrow','plank','mount']},{n:_('بيت 2'),ex:['pike','stepup','declpush','russian','crunch']},{n:_('بيت 3'),ex:['burpee','lunge','pushup','invrow','plank']}]},
+ s5:{n:_('ستارتر 5×5'),sets:5,days:[
+  {n:_('ستارتر أ'),ex:['squat','bench','row']},{n:_('ستارتر ب'),ex:['squat','barohp','deadlift']}]}
 };
 /*I18N-PLACEHOLDER*/
-let LANG='ar';const _=s=>s;
+
 const norm=s=>String(s||'').toLowerCase().replace(/[ً-ٰٟـ]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/ؤ/g,'و').replace(/ئ/g,'ي').trim();
 const FOODS=(window.FOODDB||'').split('\n').map(l=>l.trim()).filter(l=>l&&l[0]!=='#').map(l=>{
   const a=l.split('|');
@@ -227,13 +235,13 @@ const FOODS=(window.FOODDB||'').split('\n').map(l=>l.trim()).filter(l=>l&&l[0]!=
     s:(a[7]||'').split(',').filter(Boolean).map(x=>{const q=x.split(':');return{a:q[0],e:q[1],g:+q[2]}})};
   f.q=norm(f.n+' '+f.e);return f;
 });
-const CATS=[['all','الكل'],['fav','المفضلة'],['mine','أصنافي'],['egy','أكلات مصرية'],['meat','لحوم'],['poul','دواجن'],['fish','أسماك ومأكولات بحرية'],['egg','بيض'],['dairy','ألبان وأجبان'],['grain','نشويات وخبز'],['leg','بقوليات'],['veg','خضار'],['fruit','فاكهة'],['nut','مكسرات وبذور'],['oil','زيوت ودهون'],['swt','حلويات وسناكس'],['fast','وجبات سريعة'],['drk','مشروبات'],['sup','مكملات'],['misc','صلصات وإضافات']];
+const CATS=[['all','الكل'],['fav',_('المفضلة')],['mine',_('أصنافي')],['egy',_('أكلات مصرية')],['meat',_('لحوم')],['poul',_('دواجن')],['fish',_('أسماك ومأكولات بحرية')],['egg',_('بيض')],['dairy',_('ألبان وأجبان')],['grain',_('نشويات وخبز')],['leg',_('بقوليات')],['veg',_('خضار')],['fruit',_('فاكهة')],['nut',_('مكسرات وبذور')],['oil',_('زيوت ودهون')],['swt',_('حلويات وسناكس')],['fast',_('وجبات سريعة')],['drk',_('مشروبات')],['sup',_('مكملات')],['misc',_('صلصات وإضافات')]];
 const MEALS=['فطار','غدا','عشا','سناكس'];
-const CARDIO=[['walk','مشي',3.5],['run','جري',9.8],['bike','عجلة',7.5],['swim','سباحة',6],['rope','نط حبل',11],['ell','إليبتيكال',5],['hike','مشي صاعد',6],['hiit','HIIT',8],['foot','كرة قدم',7.5],['yoga','يوجا',2.5],['rowm','تجديف',7]];
-const MS=[['chest','صدر'],['waist','وسط'],['hips','ورك'],['arm','دراع'],['thigh','فخذ'],['neck','رقبة'],['shoulder','كتف']];
-const MOODS=['تعبان','عادي','كويس','ممتاز'];
+const CARDIO=[['walk',_('مشي'),3.5],['run',_('جري'),9.8],['bike',_('عجلة'),7.5],['swim',_('سباحة'),6],['rope',_('نط حبل'),11],['ell',_('إليبتيكال'),5],['hike',_('مشي صاعد'),6],['hiit','HIIT',8],['foot',_('كرة قدم'),7.5],['yoga',_('يوجا'),2.5],['rowm',_('تجديف'),7]];
+const MS=[['chest',_('صدر')],['waist',_('وسط')],['hips',_('ورك')],['arm',_('دراع')],['thigh',_('فخذ')],['neck',_('رقبة')],['shoulder',_('كتف')]];
+const MOODS=[_('تعبان'),_('عادي'),_('كويس'),_('ممتاز')];
 const DEF_HABITS=['نمت 7 ساعات','مشيت 8000 خطوة','وصلت هدف البروتين','من غير سكر زيادة','إطالة 10 دقايق'];
-const TIPS=['النوم الكفاية بيبني العضل أكتر من أي مكمل.','زوّد الوزن أو العدّات شوية كل أسبوع، ده سر التقدم.','البروتين موزع على اليوم أحسن من وجبة واحدة كبيرة.','سخّن بمجموعة خفيفة قبل أول تمرين تقيل.','المياه قبل التمرين وبعده، مش بس وقت العطش.','الراحة بين المجموعات التقيلة من دقيقتين لتلاتة.'];
+const TIPS=[_('النوم الكفاية بيبني العضل أكتر من أي مكمل.'),_('زوّد الوزن أو العدّات شوية كل أسبوع، ده سر التقدم.'),_('البروتين موزع على اليوم أحسن من وجبة واحدة كبيرة.'),_('سخّن بمجموعة خفيفة قبل أول تمرين تقيل.'),_('المياه قبل التمرين وبعده، مش بس وقت العطش.'),_('الراحة بين المجموعات التقيلة من دقيقتين لتلاتة.')];
 
 const allEx=()=>EXS.concat(S_customEx());
 function S_customEx(){return (S&&S.customEx)||[]}
@@ -242,7 +250,7 @@ const exName=id=>(exOf(id)||{n:id}).n;
 
 /* ================= state ================= */
 function defState(){return{v:2,wu:'ml',updated:0,tab:'home',sub:null,
-  profile:{name:'حسن',sex:'m',age:25,height:175,weight:75,act:1.55,goal:'maintain',program:'ppl',rest:90,waterL:2.5,weekGoal:4,targetWeight:''},
+  profile:{name:_('حسن'),sex:'m',age:25,height:175,weight:75,act:1.55,goal:'maintain',program:'ppl',rest:90,waterL:2.5,weekGoal:4,targetWeight:''},
   workouts:[],cardio:[],routines:[],customEx:[],meals:{},water:{},sleep:{},mood:{},weights:[],measures:[],
   habits:{list:DEF_HABITS.map((n,i)=>({id:'h'+i,n})),log:{}},favFoods:[],customFoods:[],ach:{},settings:{theme:'auto'},active:null};}
 const pf=v=>parseFloat(String(v==null?'':v).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[,٫،]/g,'.'));
@@ -279,11 +287,11 @@ const U={modal:null,pickMode:'active',pm:'الكل',pq:'',meal:'فطار',confir
 let CLOUD=null;
 const C={user:null,profile:null,msgs:[],clients:[],unsubs:[],plan:null};
 try{C.plan=JSON.parse(localStorage.getItem('hassanfit.plan')||'null')}catch(e){}
-const WD=['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+const WD=[_('الأحد'),_('الإثنين'),_('الثلاثاء'),_('الأربعاء'),_('الخميس'),_('الجمعة'),_('السبت')];
 const activePlan=()=>(C.plan&&!(C.profile&&C.profile.role==='client'&&!C.profile.coachId))?C.plan:null;
 function syncPlanProgram(){
   const pg=C.plan&&C.plan.program;
-  if(pg&&Array.isArray(pg.days)&&pg.days.length){PROGRAMS.coach={n:'برنامج المدرب'+(pg.name?': '+pg.name:''),sets:+pg.sets>0?+pg.sets:undefined,days:pg.days.map(d=>({n:d.n||'يوم',ex:(d.ex||[]).slice()}))}}
+  if(pg&&Array.isArray(pg.days)&&pg.days.length){PROGRAMS.coach={n:_('برنامج المدرب')+(pg.name?': '+pg.name:''),sets:+pg.sets>0?+pg.sets:undefined,days:pg.days.map(d=>({n:d.n||_('يوم'),ex:(d.ex||[]).slice()}))}}
   else delete PROGRAMS.coach;
   if(!PROGRAMS[S.profile.program])S.profile.program='ppl';
 }
@@ -303,20 +311,20 @@ syncPlanProgram();
 function planCards(where){
   const pl=activePlan();if(!pl||isCoach())return '';
   let h='';
-  if(where==='home'&&pl.note)h+='<div class="card"><div class="muted">رسالة من مدربك</div><div style="margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere">'+esc(pl.note)+'</div></div>';
+  if(where==='home'&&pl.note)h+=_('<div class="card"><div class="muted">رسالة من مدربك</div><div style="margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere">')+esc(pl.note)+'</div></div>';
   const td=pl.trainDays||[];
   if(td.length){
     const on=td.includes(new Date().getDay());
-    h+='<div class="card"><div class="row sp"><div class="muted">أيام تمرينك (من المدرب)</div>'+(on?'<span class="pill good">النهاردة تمرين</span>':'<span class="pill">النهاردة راحة</span>')+'</div><div class="row wrap" style="margin-top:8px">'+WD.map((n,i)=>td.includes(i)?'<span class="chip on">'+n+'</span>':'').join('')+'</div></div>';
+    h+=_('<div class="card"><div class="row sp"><div class="muted">أيام تمرينك (من المدرب)</div>')+(on?_('<span class="pill good">النهاردة تمرين</span>'):_('<span class="pill">النهاردة راحة</span>'))+'</div><div class="row wrap" style="margin-top:8px">'+WD.map((n,i)=>td.includes(i)?'<span class="chip on">'+n+'</span>':'').join('')+'</div></div>';
   }
   return h;
 }
 function planMealsHtml(){
   const pl=activePlan(),L=(pl&&pl.meals)||[];if(!L.length||isCoach())return '';
-  let h='<h2>خطة أكلك من المدرب</h2><div class="card">';
+  let h=_('<h2>خطة أكلك من المدرب</h2><div class="card">');
   MEALS.forEach(m=>{const it=L.filter(x=>x.meal===m);if(!it.length)return;
-    h+='<div class="row sp" style="margin:6px 0 0"><span class="muted">'+m+'</span><button class="btn alt sm" data-act="logplanmeal" data-v="'+m+'">سجّل الوجبة كلها</button></div>'
-     +it.map(x=>'<div class="item"><div class="grow">'+mealLabel(x)+'<div class="muted num">'+fmt(x.k)+' سعر · ب '+fmt(x.p)+' · ك '+fmt(x.c)+' · د '+fmt(x.f)+'</div></div><button class="btn alt sm" data-act="logplan" data-id="'+esc(x.id)+'">سجّل</button></div>').join('')});
+    h+='<div class="row sp" style="margin:6px 0 0"><span class="muted">'+_(m)+'</span><button class="btn alt sm" data-act="logplanmeal" data-v="'+m+_('">سجّل الوجبة كلها</button></div>')
+     +it.map(x=>'<div class="item"><div class="grow">'+mealLabel(x)+'<div class="muted num">'+fmt(x.k)+_(' سعر · ب ')+fmt(x.p)+_(' · ك ')+fmt(x.c)+_(' · د ')+fmt(x.f)+'</div></div><button class="btn alt sm" data-act="logplan" data-id="'+esc(x.id)+_('">سجّل</button></div>')).join('')});
   return h+'</div>';
 }
 function emSync(){const e=U.em;if(!e||!$('#em_n'))return;e.name=$('#em_n').value;if($('#em_g'))e.g=pf($('#em_g').value)||0;e.k=pf($('#em_k').value)||0;e.p=pf($('#em_p').value)||0;e.c=pf($('#em_c').value)||0;e.f=pf($('#em_f').value)||0}
@@ -329,7 +337,7 @@ function cfList(q){return foodRows(foodMatches(q,U.cc.fcat||'all',true),'cfood')
 const sync={st:'local',timer:0,last:{},busy:false};
 function setSync(){
   const el=$('#sync');if(!el)return;
-  const m={local:['على الجهاز فقط',''],saving:['جاري الحفظ…',''],ok:[(C.profile&&C.profile.coachId)?'اتبعت للمدرب':'محفوظ في حسابك','ok'],err:['تعذر الحفظ، البيانات على جهازك','err']}[sync.st];
+  const m={local:[_('على الجهاز فقط'),''],saving:[_('جاري الحفظ…'),''],ok:[(C.profile&&C.profile.coachId)?_('اتبعت للمدرب'):_('محفوظ في حسابك'),'ok'],err:[_('تعذر الحفظ، البيانات على جهازك'),'err']}[sync.st];
   el.textContent=m[0];el.className='sync '+m[1];
 }
 function buildChunks(){
@@ -366,7 +374,7 @@ async function runSync(){
     S.lastSync=Date.now();saveLocal();sync.st='ok';
   }catch(e){sync.st='err'}
   sync.busy=false;setSync();
-  const el=$('#lastsync');if(el)el.textContent=S.lastSync?ago(S.lastSync):'لسه';
+  const el=$('#lastsync');if(el)el.textContent=S.lastSync?ago(S.lastSync):_('لسه');
 }
 function applyChunksTo(T,docs){
   const core=docs.core;if(!core)return false;
@@ -409,7 +417,7 @@ function streakInfo(){
   return{n,set,best};
 }
 function weekDots(set){
-  const start=weekStart(new Date());const L=['سبت','أحد','اثنين','ثلاثاء','أربع','خميس','جمعة'];
+  const start=weekStart(new Date());const L=[_('سبت'),_('أحد'),_('اثنين'),_('ثلاثاء'),_('أربع'),_('خميس'),_('جمعة')];
   let h='<div class="week">';
   for(let i=0;i<7;i++){const d=new Date(start);d.setDate(start.getDate()+i);const k=dkey(d);
     h+='<div class="day"><div class="dot'+(set.has(k)?' on':'')+(k===dkey()?' today':'')+'">'+(set.has(k)?'✓':'')+'</div>'+L[i]+'</div>'}
@@ -432,7 +440,7 @@ function dayTotals(k){return dayMeals(k).reduce((a,m)=>({k:a.k+m.k,p:a.p+m.p,c:a
 const est1=(kg,r)=>kg*(1+r/30);
 const isSrv=f=>!f.u||f.u==='srv';
 const fName=f=>(LANG==='en'&&f.e)?f.e:f.n;
-const unitLbl=u=>u==='ml'?'مل':'جم';
+const unitLbl=u=>u==='ml'?_('مل'):_('جم');
 const custFood=f=>Object.assign({cat:'mine',e:'',s:[]},f,{q:norm((f.n||'')+' '+(f.e||''))});
 function findFood(n){const c=S.customFoods.find(f=>f.n===n);return c?custFood(c):FOODS.find(f=>f.n===n)}
 function calcFood(f,g){const r=(+g||0)/100,r1=n=>Math.round(n*10)/10;return{k:Math.round(f.k*r),p:r1(f.p*r),c:r1(f.c*r),f:r1(f.f*r)}}
@@ -452,12 +460,12 @@ function foodMatches(q,cat,noCustom){
 }
 function foodRows(L,act){
   const sh=L.slice(0,60);
-  if(!sh.length)return '<div class="muted" style="padding:8px 0">مفيش نتايج. ضيف الصنف من تحت.</div>';
-  return sh.map(f=>'<button class="frow" data-act="'+act+'" data-n="'+esc(f.n)+'"><span class="grow">'+(S.favFoods.includes(f.n)?'★ ':'')+esc(fName(f))+'</span><span class="muted num">'+fmt(f.k)+' '+(isSrv(f)?'سعر للحصة':'سعر لكل 100 '+unitLbl(f.u))+'</span></button>').join('')
-    +(L.length>sh.length?'<div class="muted" style="padding:8px 0">فيه '+(L.length-sh.length)+' صنف كمان. اكتب في البحث عشان تحدد أكتر.</div>':'');
+  if(!sh.length)return _('<div class="muted" style="padding:8px 0">مفيش نتايج. ضيف الصنف من تحت.</div>');
+  return sh.map(f=>'<button class="frow" data-act="'+act+'" data-n="'+esc(f.n)+'"><span class="grow">'+(S.favFoods.includes(f.n)?'★ ':'')+esc(fName(f))+'</span><span class="muted num">'+fmt(f.k)+' '+(isSrv(f)?_('سعر للحصة'):_('سعر لكل 100 ')+unitLbl(f.u))+'</span></button>').join('')
+    +(L.length>sh.length?_('<div class="muted" style="padding:8px 0">فيه ')+(L.length-sh.length)+_(' صنف كمان. اكتب في البحث عشان تحدد أكتر.</div>'):'');
 }
 const foodList=q=>foodRows(foodMatches(q,U.fcat||'all'),'foodsheet');
-function foodCalcHtml(){const f=U.fs,x=calcFood(f.food,f.g);return '<b>'+fmt(x.k)+' سعر</b><span>بروتين '+f1(x.p)+' · كارب '+f1(x.c)+' · دهون '+f1(x.f)+' جم</span>'}
+function foodCalcHtml(){const f=U.fs,x=calcFood(f.food,f.g);return '<b>'+fmt(x.k)+_(' سعر</b><span>بروتين ')+f1(x.p)+_(' · كارب ')+f1(x.c)+_(' · دهون ')+f1(x.f)+_(' جم</span>')}
 function planItemMeal(x,meal){const f=x.fid&&findFood(x.fid);if(f&&+x.g>0)return mealEntry(f,+x.g,meal||x.meal);return{id:uid(),meal:meal||x.meal,name:x.name,k:+x.k||0,p:+x.p||0,c:+x.c||0,f:+x.f||0}}
 function lastPerf(exId){
   for(let i=S.workouts.length-1;i>=0;i--){
@@ -467,19 +475,19 @@ function lastPerf(exId){
 }
 function bestEst(exId){let b=0;S.workouts.forEach(w=>w.exercises.forEach(e=>{if(e.ex===exId)e.sets.forEach(s=>{const v=est1(+s.kg||0,+s.reps||0);if(v>b)b=v})}));return b}
 function newEx(exId,n){const lp=lastPerf(exId);return{ex:exId,sets:Array.from({length:n||3},()=>({kg:lp?lp.kg:'',reps:lp?lp.reps:'',done:false}))}}
-function ago(ts){const m=Math.floor((Date.now()-ts)/60000);if(m<1)return 'الآن';if(m<60)return 'قبل '+m+' دقيقة';const h=Math.floor(m/60);if(h<24)return 'قبل '+h+' ساعة';return 'قبل '+Math.floor(h/24)+' يوم'}
+function ago(ts){const m=Math.floor((Date.now()-ts)/60000);if(LANG==='en'){if(m<1)return 'Just now';if(m<60)return m+' min ago';const h0=Math.floor(m/60);if(h0<24)return h0+' h ago';const d0=Math.floor(h0/24);return d0+(d0===1?' day ago':' days ago')}if(m<1)return _('الآن');if(m<60)return _('قبل ')+m+_(' دقيقة');const h=Math.floor(m/60);if(h<24)return _('قبل ')+h+_(' ساعة');return _('قبل ')+Math.floor(h/24)+_(' يوم')}
 function nextDay(){const pr=PROGRAMS[S.profile.program]||PROGRAMS.ppl;return{pr,i:S.workouts.length%pr.days.length}}
 const fmtDate=k=>AR(parseKey(k),{weekday:'long',day:'numeric',month:'long'});
 const activeVol=a=>a.exercises.reduce((s,e)=>s+e.sets.filter(x=>x.done).reduce((t,x)=>t+(+x.kg||0)*(+x.reps||0),0),0);
 const activeSets=a=>a.exercises.reduce((s,e)=>s+e.sets.filter(x=>x.done).length,0);
 function weekStats(){const ws=dkey(weekStart(new Date()));const w=S.workouts.filter(x=>x.date>=ws);return{n:w.length+S.cardio.filter(x=>x.date>=ws).length,vol:w.reduce((s,x)=>s+x.volume,0),wn:w.length}}
-function chips(list,cur,act,key){return '<div class="chips">'+list.map(a=>'<button class="chip'+(cur===a[0]?' on':'')+'" data-act="'+act+'" data-v="'+esc(a[0])+'">'+esc(a[1])+'</button>').join('')+'</div>'}
+function chips(list,cur,act,key){return '<div class="chips">'+list.map(a=>'<button class="chip'+(cur===a[0]?' on':'')+'" data-act="'+act+'" data-v="'+esc(a[0])+'">'+esc(_(a[1]))+'</button>').join('')+'</div>'}
 function line(pts,h){
   if(pts.length<2)return '';
   h=h||130;const W=320,P=18;const ys=pts.map(p=>p.y);let mn=Math.min(...ys),mx=Math.max(...ys);if(mn===mx){mn-=1;mx+=1}
   const xy=pts.map((p,i)=>[P+i*(W-2*P)/(pts.length-1),h-P-(p.y-mn)/(mx-mn)*(h-2*P)]);
   const last=pts[pts.length-1];
-  return '<div class="wchart"><svg viewBox="0 0 '+W+' '+h+'" width="100%" role="img" aria-label="رسم بياني"><line class="ax" x1="'+P+'" y1="'+(h-P)+'" x2="'+(W-P)+'" y2="'+(h-P)+'"/>'+
+  return '<div class="wchart"><svg viewBox="0 0 '+W+' '+h+_('" width="100%" role="img" aria-label="رسم بياني"><line class="ax" x1="')+P+'" y1="'+(h-P)+'" x2="'+(W-P)+'" y2="'+(h-P)+'"/>'+
    '<polyline class="ln" points="'+xy.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')+'"/>'+xy.map(p=>'<circle class="pt" cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3.5"/>').join('')+
    '<text class="tx" x="'+P+'" y="12">'+f1(mx)+'</text><text class="tx" x="'+P+'" y="'+(h-3)+'">'+f1(mn)+'</text><text class="tx" x="'+(W-P)+'" y="12" text-anchor="end">'+f1(last.y)+'</text></svg></div>';
 }
@@ -495,44 +503,44 @@ function applyTheme(){const t=(S.settings&&S.settings.theme)||'auto';const r=doc
 /* ================= achievements ================= */
 const totalVol=()=>S.workouts.reduce((s,w)=>s+w.volume,0);
 const ACH=[
- ['first','أول تمرين','سجّل أول تمرين',()=>S.workouts.length>=1],
- ['w10','10 تمارين','أكمل 10 تمارين',()=>S.workouts.length>=10],
- ['w50','50 تمرين','أكمل 50 تمرين',()=>S.workouts.length>=50],
- ['w100','100 تمرين','أكمل 100 تمرين',()=>S.workouts.length>=100],
- ['s7','سلسلة 7 أيام','7 أيام نشاط ورا بعض',()=>streakInfo().best>=7],
- ['s30','سلسلة 30 يوم','30 يوم نشاط ورا بعض',()=>streakInfo().best>=30],
- ['v10','10 طن حجم','إجمالي الحجم 10,000 كجم',()=>totalVol()>=10000],
- ['v100','100 طن حجم','إجمالي الحجم 100,000 كجم',()=>totalVol()>=100000],
- ['pr5','5 أرقام قياسية','حطّم 5 أرقام قياسية',()=>S.workouts.reduce((s,w)=>s+(w.prs||0),0)>=5],
- ['cardio','أول كارديو','سجّل أول جلسة كارديو',()=>S.cardio.length>=1],
- ['km50','50 كيلو','50 كم كارديو',()=>S.cardio.reduce((s,c)=>s+(+c.km||0),0)>=50],
- ['water7','7 أيام مياه','وصّل هدف المياه 7 أيام',()=>Object.keys(S.water).filter(k=>S.water[k]>=waterGoalMl()).length>=7],
- ['wt5','متابع للوزن','سجّل وزنك 5 مرات',()=>S.weights.length>=5],
- ['meal7','متابع للأكل','سجّل أكل 7 أيام',()=>Object.keys(S.meals).filter(k=>S.meals[k].length).length>=7],
- ['sleep5','نوم كويس','نمت 7 ساعات أو أكتر 5 مرات',()=>Object.keys(S.sleep).filter(k=>S.sleep[k].h>=7).length>=5],
- ['hab','يوم كامل','أنجز كل العادات في يوم',()=>Object.keys(S.habits.log).some(k=>{const l=S.habits.log[k]||[];return S.habits.list.length&&S.habits.list.every(h=>l.includes(h.id))})],
- ['goal','وصلت هدفك','وصلت للوزن المستهدف',()=>{const t=+S.profile.targetWeight;if(!t||!S.weights.length)return false;const first=S.weights[0].kg,last=S.weights[S.weights.length-1].kg;return first>t?last<=t:last>=t}]
+ ['first',_('أول تمرين'),_('سجّل أول تمرين'),()=>S.workouts.length>=1],
+ ['w10',_('10 تمارين'),_('أكمل 10 تمارين'),()=>S.workouts.length>=10],
+ ['w50',_('50 تمرين'),_('أكمل 50 تمرين'),()=>S.workouts.length>=50],
+ ['w100',_('100 تمرين'),_('أكمل 100 تمرين'),()=>S.workouts.length>=100],
+ ['s7',_('سلسلة 7 أيام'),_('7 أيام نشاط ورا بعض'),()=>streakInfo().best>=7],
+ ['s30',_('سلسلة 30 يوم'),_('30 يوم نشاط ورا بعض'),()=>streakInfo().best>=30],
+ ['v10',_('10 طن حجم'),_('إجمالي الحجم 10,000 كجم'),()=>totalVol()>=10000],
+ ['v100',_('100 طن حجم'),_('إجمالي الحجم 100,000 كجم'),()=>totalVol()>=100000],
+ ['pr5',_('5 أرقام قياسية'),_('حطّم 5 أرقام قياسية'),()=>S.workouts.reduce((s,w)=>s+(w.prs||0),0)>=5],
+ ['cardio',_('أول كارديو'),_('سجّل أول جلسة كارديو'),()=>S.cardio.length>=1],
+ ['km50',_('50 كيلو'),_('50 كم كارديو'),()=>S.cardio.reduce((s,c)=>s+(+c.km||0),0)>=50],
+ ['water7',_('7 أيام مياه'),_('وصّل هدف المياه 7 أيام'),()=>Object.keys(S.water).filter(k=>S.water[k]>=waterGoalMl()).length>=7],
+ ['wt5',_('متابع للوزن'),_('سجّل وزنك 5 مرات'),()=>S.weights.length>=5],
+ ['meal7',_('متابع للأكل'),_('سجّل أكل 7 أيام'),()=>Object.keys(S.meals).filter(k=>S.meals[k].length).length>=7],
+ ['sleep5',_('نوم كويس'),_('نمت 7 ساعات أو أكتر 5 مرات'),()=>Object.keys(S.sleep).filter(k=>S.sleep[k].h>=7).length>=5],
+ ['hab',_('يوم كامل'),_('أنجز كل العادات في يوم'),()=>Object.keys(S.habits.log).some(k=>{const l=S.habits.log[k]||[];return S.habits.list.length&&S.habits.list.every(h=>l.includes(h.id))})],
+ ['goal',_('وصلت هدفك'),_('وصلت للوزن المستهدف'),()=>{const t=+S.profile.targetWeight;if(!t||!S.weights.length)return false;const first=S.weights[0].kg,last=S.weights[S.weights.length-1].kg;return first>t?last<=t:last>=t}]
 ];
-function checkAch(){ACH.forEach(a=>{if(!S.ach[a[0]]){let ok=false;try{ok=a[3]()}catch(e){}if(ok){S.ach[a[0]]=Date.now();toast('إنجاز جديد: '+a[1])}}})}
+function checkAch(){ACH.forEach(a=>{if(!S.ach[a[0]]){let ok=false;try{ok=a[3]()}catch(e){}if(ok){S.ach[a[0]]=Date.now();toast(_('إنجاز جديد: ')+a[1])}}})}
 
 /* ================= views ================= */
 function vHome(){
   const {n,set}=streakInfo();const {pr,i}=nextDay();const day=pr.days[i];
   const t=targets();const tot=dayTotals();const k=dkey();
   const ws=weekStats();const goal=+S.profile.weekGoal||4;
-  let h=homeNotice()+planCards('home')+'<div class="card"><div class="streak"><div class="flame num">'+n+'</div><div><h3 style="margin:0">'+(n?'يوم متتالي':'ابدأ سلسلتك النهاردة')+'</h3><div class="muted">'+(set.has(k)?'نشاطك النهاردة اتسجّل':'لسه معملتش نشاط النهاردة')+'</div></div></div>'+weekDots(set)+
-   '<div class="row sp muted" style="margin-top:12px"><span>هدف الأسبوع</span><span class="num">'+ws.n+' / '+goal+'</span></div><div class="bar'+(ws.n>=goal?' ok':'')+'" style="margin-top:4px"><i style="width:'+Math.min(100,ws.n/goal*100)+'%"></i></div></div>';
-  if(S.active)h+='<div class="card"><h3>تمرين شغّال: '+esc(S.active.name)+'</h3><div class="muted" style="margin-bottom:12px">'+activeSets(S.active)+' مجموعة اتسجلت</div><button class="btn block" data-act="tab" data-v="train">كمّل التمرين</button></div>';
-  else h+='<div class="card"><div class="muted">تمرين النهاردة · '+esc(pr.n)+'</div><h3 style="margin:2px 0 8px">'+esc(day.n)+'</h3><div class="muted" style="margin-bottom:12px">'+day.ex.map(exName).join(' · ')+'</div><button class="btn block" data-act="start" data-i="'+i+'">ابدأ التمرين</button></div>';
+  let h=homeNotice()+planCards('home')+'<div class="card"><div class="streak"><div class="flame num">'+n+'</div><div><h3 style="margin:0">'+(n?_('يوم متتالي'):_('ابدأ سلسلتك النهاردة'))+'</h3><div class="muted">'+(set.has(k)?_('نشاطك النهاردة اتسجّل'):_('لسه معملتش نشاط النهاردة'))+'</div></div></div>'+weekDots(set)+
+   _('<div class="row sp muted" style="margin-top:12px"><span>هدف الأسبوع</span><span class="num">')+ws.n+' / '+goal+'</span></div><div class="bar'+(ws.n>=goal?' ok':'')+'" style="margin-top:4px"><i style="width:'+Math.min(100,ws.n/goal*100)+'%"></i></div></div>';
+  if(S.active)h+=_('<div class="card"><h3>تمرين شغّال: ')+esc(S.active.name)+'</h3><div class="muted" style="margin-bottom:12px">'+activeSets(S.active)+_n(activeSets(S.active),' مجموعة اتسجلت</div><button class="btn block" data-act="tab" data-v="train">كمّل التمرين</button></div>');
+  else h+=_('<div class="card"><div class="muted">تمرين النهاردة · ')+esc(pr.n)+'</div><h3 style="margin:2px 0 8px">'+esc(day.n)+'</h3><div class="muted" style="margin-bottom:12px">'+day.ex.map(exName).join(' · ')+'</div><button class="btn block" data-act="start" data-i="'+i+_('">ابدأ التمرين</button></div>');
   const pct=Math.min(100,tot.k/t.kcal*100);
-  h+='<div class="card"><div class="row sp"><h3 style="margin:0">أكل النهاردة</h3><button class="btn alt sm" data-act="tab" data-v="food">سجّل أكل</button></div><div class="row sp" style="margin:10px 0 6px"><span class="num"><b style="font-size:22px">'+fmt(tot.k)+'</b> <span class="muted">/ '+fmt(t.kcal)+' سعر</span></span><span class="muted">بروتين '+fmt(tot.p)+' / '+t.p+' جم</span></div><div class="bar"><i style="width:'+pct+'%"></i></div></div>';
+  h+=_('<div class="card"><div class="row sp"><h3 style="margin:0">أكل النهاردة</h3><button class="btn alt sm" data-act="tab" data-v="food">سجّل أكل</button></div><div class="row sp" style="margin:10px 0 6px"><span class="num"><b style="font-size:22px">')+fmt(tot.k)+'</b> <span class="muted">/ '+fmt(t.kcal)+_(' سعر</span></span><span class="muted">بروتين ')+fmt(tot.p)+' / '+t.p+_(' جم</span></div><div class="bar"><i style="width:')+pct+'%"></i></div></div>';
   h+=waterCard(false);
   const hl=S.habits.list,hd=S.habits.log[k]||[];
-  if(hl.length)h+='<div class="card"><div class="row sp"><h3 style="margin:0">عادات النهاردة</h3><span class="muted num">'+hd.filter(x=>hl.some(y=>y.id===x)).length+' / '+hl.length+'</span></div><div class="row wrap" style="margin-top:10px">'+hl.map(x=>'<button class="chip'+(hd.includes(x.id)?' on':'')+'" data-act="habit" data-id="'+x.id+'">'+esc(x.n)+'</button>').join('')+'</div></div>';
+  if(hl.length)h+=_('<div class="card"><div class="row sp"><h3 style="margin:0">عادات النهاردة</h3><span class="muted num">')+hd.filter(x=>hl.some(y=>y.id===x)).length+' / '+hl.length+'</span></div><div class="row wrap" style="margin-top:10px">'+hl.map(x=>'<button class="chip'+(hd.includes(x.id)?' on':'')+'" data-act="habit" data-id="'+x.id+'">'+esc(_(x.n))+'</button>').join('')+'</div></div>';
   const last=S.workouts[S.workouts.length-1];
-  if(last)h+='<div class="card"><div class="muted">آخر تمرين · '+esc(fmtDate(last.date))+'</div><h3 style="margin:2px 0 10px">'+esc(last.name)+'</h3><div class="grid3"><div class="stat"><b>'+last.dur+'</b><span>دقيقة</span></div><div class="stat"><b>'+last.sets+'</b><span>مجموعة</span></div><div class="stat"><b>'+fmt(last.volume)+'</b><span>كجم حجم</span></div></div></div>';
+  if(last)h+=_('<div class="card"><div class="muted">آخر تمرين · ')+esc(fmtDate(last.date))+'</div><h3 style="margin:2px 0 10px">'+esc(last.name)+'</h3><div class="grid3"><div class="stat"><b>'+last.dur+_('</b><span>دقيقة</span></div><div class="stat"><b>')+last.sets+_('</b><span>مجموعة</span></div><div class="stat"><b>')+fmt(last.volume)+_('</b><span>كجم حجم</span></div></div></div>');
   const ach=Object.keys(S.ach).sort((a,b)=>S.ach[b]-S.ach[a])[0];
-  if(ach){const a=ACH.find(x=>x[0]===ach);if(a)h+='<div class="card row"><div class="medal" style="background:var(--flame);color:var(--bg)">★</div><div><div class="muted">آخر إنجاز</div><b>'+esc(a[1])+'</b></div></div>'}
+  if(ach){const a=ACH.find(x=>x[0]===ach);if(a)h+=_('<div class="card row"><div class="medal" style="background:var(--flame);color:var(--bg)">★</div><div><div class="muted">آخر إنجاز</div><b>')+esc(a[1])+'</b></div></div>'}
   h+='<div class="card muted">'+TIPS[Math.floor(Date.now()/864e5)%TIPS.length]+'</div>';
   return h;
 }
@@ -540,116 +548,116 @@ function vHome(){
 function vTrain(){
   if(S.active)return vActive();
   const {pr,i}=nextDay();
-  let h=planCards('train')+'<h2>اختار تمرينك</h2><div class="muted" style="margin:-6px 2px 10px">البرنامج: '+esc(pr.n)+' (غيّره من الإعدادات)</div>';
-  pr.days.forEach((d,j)=>{h+='<div class="card"><div class="row sp"><div class="grow"><h3 style="margin:0">'+esc(d.n)+(j===i?' <span class="tag">الجاي</span>':'')+'</h3><div class="muted">'+d.ex.map(exName).join(' · ')+'</div></div><button class="btn sm" data-act="start" data-i="'+j+'">ابدأ</button></div></div>'});
-  h+='<div class="grid2" style="margin-bottom:12px"><button class="btn line" data-act="startEmpty">تمرين فاضي</button><button class="btn line" data-act="repeat"'+(S.workouts.length?'':' disabled')+'>كرّر آخر تمرين</button></div>';
-  h+='<div class="row sp"><h2 style="margin:10px 2px">روتيناتي</h2><button class="btn alt sm" data-act="newroutine">+ روتين جديد</button></div>';
-  if(!S.routines.length)h+='<div class="card muted">لسه معندكش روتينات. اعمل روتين بتمارينك، أو اطلب من المدرب الذكي خطة كاملة.</div>';
-  S.routines.forEach(r=>{h+='<div class="card"><div class="row sp"><div class="grow"><h3 style="margin:0">'+esc(r.name)+'</h3><div class="muted">'+r.ex.map(exName).join(' · ')+'</div></div></div><div class="row" style="margin-top:10px"><button class="btn sm" data-act="startroutine" data-id="'+r.id+'">ابدأ</button><button class="btn alt sm" data-act="editroutine" data-id="'+r.id+'">تعديل</button><button class="btn danger sm" data-act="delroutine" data-id="'+r.id+'">مسح</button></div></div>'});
-  h+='<h2>السجل</h2>';
-  if(!S.workouts.length)h+='<div class="card muted">لسه مفيش تمارين. أول تمرين هيظهر هنا.</div>';
+  let h=planCards('train')+_('<h2>اختار تمرينك</h2><div class="muted" style="margin:-6px 2px 10px">البرنامج: ')+esc(pr.n)+_(' (غيّره من الإعدادات)</div>');
+  pr.days.forEach((d,j)=>{h+='<div class="card"><div class="row sp"><div class="grow"><h3 style="margin:0">'+esc(d.n)+(j===i?_(' <span class="tag">الجاي</span>'):'')+'</h3><div class="muted">'+d.ex.map(exName).join(' · ')+'</div></div><button class="btn sm" data-act="start" data-i="'+j+_('">ابدأ</button></div></div>')});
+  h+=_('<div class="grid2" style="margin-bottom:12px"><button class="btn line" data-act="startEmpty">تمرين فاضي</button><button class="btn line" data-act="repeat"')+(S.workouts.length?'':' disabled')+_('>كرّر آخر تمرين</button></div>');
+  h+=_('<div class="row sp"><h2 style="margin:10px 2px">روتيناتي</h2><button class="btn alt sm" data-act="newroutine">+ روتين جديد</button></div>');
+  if(!S.routines.length)h+=_('<div class="card muted">لسه معندكش روتينات. اعمل روتين بتمارينك.</div>');
+  S.routines.forEach(r=>{h+='<div class="card"><div class="row sp"><div class="grow"><h3 style="margin:0">'+esc(r.name)+'</h3><div class="muted">'+r.ex.map(exName).join(' · ')+'</div></div></div><div class="row" style="margin-top:10px"><button class="btn sm" data-act="startroutine" data-id="'+r.id+_('">ابدأ</button><button class="btn alt sm" data-act="editroutine" data-id="')+r.id+_('">تعديل</button><button class="btn danger sm" data-act="delroutine" data-id="')+r.id+_('">مسح</button></div></div>')});
+  h+=_('<h2>السجل</h2>');
+  if(!S.workouts.length)h+=_('<div class="card muted">لسه مفيش تمارين. أول تمرين هيظهر هنا.</div>');
   S.workouts.slice().reverse().slice(0,15).forEach(w=>{
-    h+='<div class="card"><div class="row sp"><h3 style="margin:0">'+esc(w.name)+(w.prs?' <span class="pill">'+w.prs+' رقم قياسي</span>':'')+'</h3><span class="row"><button class="x" data-act="editw" data-id="'+w.id+'" aria-label="تعديل">✎</button><button class="x" data-act="delw" data-id="'+w.id+'" aria-label="مسح">✕</button></span></div><div class="muted">'+esc(fmtDate(w.date))+' · '+w.dur+' دقيقة · '+w.sets+' مجموعة · '+fmt(w.volume)+' كجم</div><div class="muted" style="margin-top:6px">'+w.exercises.map(e=>esc(exName(e.ex))+' '+e.sets.map(s=>(s.kg||0)+'×'+(s.reps||0)).slice(0,5).join('، ')).join('<br>')+'</div>'+(w.note?'<div style="margin-top:6px">'+esc(w.note)+'</div>':'')+'</div>'});
+    h+='<div class="card"><div class="row sp"><h3 style="margin:0">'+esc(w.name)+(w.prs?' <span class="pill">'+w.prs+_n(w.prs,' رقم قياسي</span>'):'')+'</h3><span class="row"><button class="x" data-act="editw" data-id="'+w.id+_('" aria-label="تعديل">✎</button><button class="x" data-act="delw" data-id="')+w.id+_('" aria-label="مسح">✕</button></span></div><div class="muted">')+esc(fmtDate(w.date))+' · '+w.dur+_(' دقيقة · ')+w.sets+_n(w.sets,' مجموعة · ')+fmt(w.volume)+_(' كجم</div><div class="muted" style="margin-top:6px">')+w.exercises.map(e=>esc(exName(e.ex))+' '+e.sets.map(s=>(s.kg||0)+'×'+(s.reps||0)).slice(0,5).join(_('، '))).join('<br>')+'</div>'+(w.note?'<div style="margin-top:6px">'+esc(w.note)+'</div>':'')+'</div>'});
   return h;
 }
 
 function vActive(){
   const a=S.active;
-  let h='<div class="rest" id="restbar"'+(U.rest?'':' hidden')+'><div class="row sp"><b>راحة <span class="num" id="resttime">00:00</span></b><span class="row"><button class="btn sm" data-act="restadd" data-v="-15">−15</button><button class="btn sm" data-act="restadd" data-v="15">+15</button><button class="btn sm" data-act="restskip">تخطي</button></span></div></div>';
-  h+='<div style="margin:14px 2px 8px"><h2 style="margin:0">'+esc(a.name)+'</h2><div class="muted">مدة التمرين <span class="num" id="elapsed">00:00</span> · '+activeSets(a)+' مجموعة · '+fmt(activeVol(a))+' كجم</div></div>';
+  let h='<div class="rest" id="restbar"'+(U.rest?'':' hidden')+_('><div class="row sp"><b>راحة <span class="num" id="resttime">00:00</span></b><span class="row"><button class="btn sm" data-act="restadd" data-v="-15">−15</button><button class="btn sm" data-act="restadd" data-v="15">+15</button><button class="btn sm" data-act="restskip">تخطي</button></span></div></div>');
+  h+='<div style="margin:14px 2px 8px"><h2 style="margin:0">'+esc(a.name)+_('</h2><div class="muted">مدة التمرين <span class="num" id="elapsed">00:00</span> · ')+activeSets(a)+_n(activeSets(a),' مجموعة · ')+fmt(activeVol(a))+_(' كجم</div></div>');
   a.exercises.forEach((e,i)=>{
     const lp=lastPerf(e.ex);
-    h+='<div class="card"><div class="row sp"><div class="grow"><h3 style="margin:0">'+esc(exName(e.ex))+'</h3><div class="muted">'+(lp?'آخر مرة: '+lp.kg+' كجم × '+lp.reps:'أول مرة تسجله')+'</div></div><button class="x" data-act="rmex" data-i="'+i+'" aria-label="شيل التمرين">✕</button></div><div class="colhead"><span>#</span><span>كجم</span><span>عدّات</span><span></span></div>';
-    e.sets.forEach((s,j)=>{h+='<div class="setrow'+(s.done?' done':'')+(s.pr?' pr':'')+'"><span class="n">'+(s.pr?'★':(j+1))+'</span><input inputmode="decimal" data-k="kg" data-i="'+i+'" data-j="'+j+'" value="'+esc(s.kg)+'" aria-label="الوزن"><input inputmode="numeric" data-k="reps" data-i="'+i+'" data-j="'+j+'" value="'+esc(s.reps)+'" aria-label="العدّات"><button class="chk'+(s.done?' on':'')+'" data-act="done" data-i="'+i+'" data-j="'+j+'" aria-label="تمت">'+(s.done?'✓':'')+'</button></div>'});
-    h+='<div class="row" style="margin-top:10px"><button class="btn alt sm" data-act="addset" data-i="'+i+'">+ مجموعة</button>'+(e.sets.length>1?'<button class="btn alt sm" data-act="delset" data-i="'+i+'">− مجموعة</button>':'')+'</div></div>';
+    h+='<div class="card"><div class="row sp"><div class="grow"><h3 style="margin:0">'+esc(exName(e.ex))+'</h3><div class="muted">'+(lp?_('آخر مرة: ')+lp.kg+_(' كجم × ')+lp.reps:_('أول مرة تسجله'))+'</div></div><button class="x" data-act="rmex" data-i="'+i+_('" aria-label="شيل التمرين">✕</button></div><div class="colhead"><span>#</span><span>كجم</span><span>عدّات</span><span></span></div>');
+    e.sets.forEach((s,j)=>{h+='<div class="setrow'+(s.done?' done':'')+(s.pr?' pr':'')+'"><span class="n">'+(s.pr?'★':(j+1))+'</span><input inputmode="decimal" data-k="kg" data-i="'+i+'" data-j="'+j+'" value="'+esc(s.kg)+_('" aria-label="الوزن"><input inputmode="numeric" data-k="reps" data-i="')+i+'" data-j="'+j+'" value="'+esc(s.reps)+_('" aria-label="العدّات"><button class="chk')+(s.done?' on':'')+'" data-act="done" data-i="'+i+'" data-j="'+j+_('" aria-label="تمت">')+(s.done?'✓':'')+'</button></div>'});
+    h+='<div class="row" style="margin-top:10px"><button class="btn alt sm" data-act="addset" data-i="'+i+_('">+ مجموعة</button>')+(e.sets.length>1?'<button class="btn alt sm" data-act="delset" data-i="'+i+_('">− مجموعة</button>'):'')+'</div></div>';
   });
-  h+='<button class="btn line block" data-act="openpick" data-v="active" style="margin-bottom:10px">+ أضف تمرين</button>';
-  h+='<div class="grid2"><button class="btn block" data-act="finish">إنهاء التمرين</button>'+(U.confirmCancel?'<button class="btn danger block" data-act="cancelyes">أكيد، إلغاء</button>':'<button class="btn danger block" data-act="cancel">إلغاء</button>')+'</div>';
+  h+=_('<button class="btn line block" data-act="openpick" data-v="active" style="margin-bottom:10px">+ أضف تمرين</button>');
+  h+=_('<div class="grid2"><button class="btn block" data-act="finish">إنهاء التمرين</button>')+(U.confirmCancel?_('<button class="btn danger block" data-act="cancelyes">أكيد، إلغاء</button>'):_('<button class="btn danger block" data-act="cancel">إلغاء</button>'))+'</div>';
   return h;
 }
 
 function waterCard(full){
   const w=S.water[dkey()]||0,g=waterGoalMl();
-  let h='<div class="card"><div class="row sp"><h3 style="margin:0">مياه</h3><span class="num muted">'+fL(w)+' / '+fL(g)+' لتر</span></div><div class="row" style="margin-top:10px"><div class="bar'+(w>=g?' ok':'')+' grow"><i style="width:'+Math.min(100,w/g*100)+'%"></i></div></div>';
-  h+='<div class="row wrap" style="margin-top:10px">'+(full?[200,330,500,750,1000]:[250,500,1000]).map(n=>'<button class="chip" data-act="wadd" data-n="'+n+'">+ '+(n>=1000?(n/1000)+' لتر':n+' مل')+'</button>').join('')+'<button class="chip" data-act="wundo"'+(w?'':' disabled')+'>تراجع</button></div>';
-  if(full)h+='<div class="row" style="margin-top:10px"><input id="wml" inputmode="numeric" placeholder="كمية بالمل" aria-label="كمية المياه بالمل"><button class="btn alt sm" data-act="wcustom">أضف</button></div>';
+  let h=_('<div class="card"><div class="row sp"><h3 style="margin:0">مياه</h3><span class="num muted">')+fL(w)+' / '+fL(g)+_(' لتر</span></div><div class="row" style="margin-top:10px"><div class="bar')+(w>=g?' ok':'')+' grow"><i style="width:'+Math.min(100,w/g*100)+'%"></i></div></div>';
+  h+='<div class="row wrap" style="margin-top:10px">'+(full?[200,330,500,750,1000]:[250,500,1000]).map(n=>'<button class="chip" data-act="wadd" data-n="'+n+'">+ '+(n>=1000?(n/1000)+_(' لتر'):n+_(' مل'))+'</button>').join('')+'<button class="chip" data-act="wundo"'+(w?'':' disabled')+_('>تراجع</button></div>');
+  if(full)h+=_('<div class="row" style="margin-top:10px"><input id="wml" inputmode="numeric" placeholder="كمية بالمل" aria-label="كمية المياه بالمل"><button class="btn alt sm" data-act="wcustom">أضف</button></div>');
   return h+'</div>';
 }
 function vFood(){
   const t=targets();const k=dkey();const tot=dayTotals(k);
   const R=52,C=2*Math.PI*R;const pct=Math.min(1,tot.k/t.kcal);
-  let h='<h2>أكل النهاردة</h2><div class="card"><div class="row"><div class="ring"><svg width="132" height="132" viewBox="0 0 132 132"><circle cx="66" cy="66" r="'+R+'" fill="none" stroke="var(--surface2)" stroke-width="12"/><circle cx="66" cy="66" r="'+R+'" fill="none" stroke="var(--accent)" stroke-width="12" stroke-linecap="round" stroke-dasharray="'+C+'" stroke-dashoffset="'+(C*(1-pct))+'"/></svg><div class="mid"><b class="num">'+fmt(Math.max(0,t.kcal-tot.k))+'</b><span class="muted">باقي سعر</span></div></div><div class="grow">'+[['بروتين',tot.p,t.p],['كارب',tot.c,t.c],['دهون',tot.f,t.f]].map(r=>'<div style="margin-bottom:9px"><div class="row sp muted"><span>'+r[0]+'</span><span class="num">'+fmt(r[1])+' / '+r[2]+' جم</span></div><div class="bar"><i style="width:'+Math.min(100,r[1]/Math.max(1,r[2])*100)+'%"></i></div></div>').join('')+'</div></div></div>';
+  let h=_('<h2>أكل النهاردة</h2><div class="card"><div class="row"><div class="ring"><svg width="132" height="132" viewBox="0 0 132 132"><circle cx="66" cy="66" r="')+R+'" fill="none" stroke="var(--surface2)" stroke-width="12"/><circle cx="66" cy="66" r="'+R+'" fill="none" stroke="var(--accent)" stroke-width="12" stroke-linecap="round" stroke-dasharray="'+C+'" stroke-dashoffset="'+(C*(1-pct))+'"/></svg><div class="mid"><b class="num">'+fmt(Math.max(0,t.kcal-tot.k))+_('</b><span class="muted">باقي سعر</span></div></div><div class="grow">')+[[_('بروتين'),tot.p,t.p],[_('كارب'),tot.c,t.c],[_('دهون'),tot.f,t.f]].map(r=>'<div style="margin-bottom:9px"><div class="row sp muted"><span>'+r[0]+'</span><span class="num">'+fmt(r[1])+' / '+r[2]+_(' جم</span></div><div class="bar"><i style="width:')+Math.min(100,r[1]/Math.max(1,r[2])*100)+'%"></i></div></div>').join('')+'</div></div></div>';
   h+=waterCard(true);
-  h+=planMealsHtml()+'<h2>أضف وجبة</h2>'+chips(MEALS.map(m=>[m,_(m)]),U.meal,'meal');
-  h+='<div class="card"><input id="fsearch" placeholder="دوّر على أكلة أو مشروب" aria-label="بحث عن أكل" value="'+esc(U.fq||'')+'" style="margin-bottom:10px">'+chips(CATS.map(c=>[c[0],_(c[1])]),U.fcat||'all','fcat')+'<div id="flist" class="flist">'+foodList(U.fq||'')+'</div></div>';
-  h+='<div class="card"><h3>صنف جديد</h3><div class="muted" style="margin:2px 0 10px">اكتب القيم لكل 100 جم (أو لكل 100 مل للمشروبات) وبعدها اختار الكمية بالجرام.</div><div class="grid2"><div><label class="f" for="cn">الاسم</label><input id="cn"></div><div><label class="f" for="cu">النوع</label><select id="cu"><option value="g">أكل (جم)</option><option value="ml">مشروب (مل)</option></select></div><div><label class="f" for="ck">سعرات / 100</label><input id="ck" inputmode="decimal"></div><div><label class="f" for="cp">بروتين / 100</label><input id="cp" inputmode="decimal"></div><div><label class="f" for="cc">كارب / 100</label><input id="cc" inputmode="decimal"></div><div><label class="f" for="cf">دهون / 100</label><input id="cf" inputmode="decimal"></div></div><button class="btn block" style="margin-top:10px" data-act="savecustom">احفظ الصنف واختار الكمية</button></div>';
-  h+='<div class="card"><h3>سجّل سعرات مباشرة</h3><div class="muted" style="margin:2px 0 10px">لو عارف إجمالي السعرات بس (مثلا من علبة المنتج).</div><div class="grid2"><div><label class="f" for="dn">الاسم</label><input id="dn"></div><div><label class="f" for="dk">سعرات</label><input id="dk" inputmode="decimal"></div><div><label class="f" for="dp">بروتين (جم)</label><input id="dp" inputmode="decimal"></div><div><label class="f" for="dc">كارب (جم)</label><input id="dc" inputmode="decimal"></div><div><label class="f" for="dfa">دهون (جم)</label><input id="dfa" inputmode="decimal"></div></div><button class="btn alt block" style="margin-top:10px" data-act="addcustom">أضف على '+_(U.meal)+'</button></div>';
+  h+=planMealsHtml()+_('<h2>أضف وجبة</h2>')+chips(MEALS.map(m=>[m,_(m)]),U.meal,'meal');
+  h+=_('<div class="card"><input id="fsearch" placeholder="دوّر على أكلة أو مشروب" aria-label="بحث عن أكل" value="')+esc(U.fq||'')+'" style="margin-bottom:10px">'+chips(CATS.map(c=>[c[0],_(c[1])]),U.fcat||'all','fcat')+'<div id="flist" class="flist">'+foodList(U.fq||'')+'</div></div>';
+  h+=_('<div class="card"><h3>صنف جديد</h3><div class="muted" style="margin:2px 0 10px">اكتب القيم لكل 100 جم (أو لكل 100 مل للمشروبات) وبعدها اختار الكمية بالجرام.</div><div class="grid2"><div><label class="f" for="cn">الاسم</label><input id="cn"></div><div><label class="f" for="cu">النوع</label><select id="cu"><option value="g">أكل (جم)</option><option value="ml">مشروب (مل)</option></select></div><div><label class="f" for="ck">سعرات / 100</label><input id="ck" inputmode="decimal"></div><div><label class="f" for="cp">بروتين / 100</label><input id="cp" inputmode="decimal"></div><div><label class="f" for="cc">كارب / 100</label><input id="cc" inputmode="decimal"></div><div><label class="f" for="cf">دهون / 100</label><input id="cf" inputmode="decimal"></div></div><button class="btn block" style="margin-top:10px" data-act="savecustom">احفظ الصنف واختار الكمية</button></div>');
+  h+=_('<div class="card"><h3>سجّل سعرات مباشرة</h3><div class="muted" style="margin:2px 0 10px">لو عارف إجمالي السعرات بس (مثلا من علبة المنتج).</div><div class="grid2"><div><label class="f" for="dn">الاسم</label><input id="dn"></div><div><label class="f" for="dk">سعرات</label><input id="dk" inputmode="decimal"></div><div><label class="f" for="dp">بروتين (جم)</label><input id="dp" inputmode="decimal"></div><div><label class="f" for="dc">كارب (جم)</label><input id="dc" inputmode="decimal"></div><div><label class="f" for="dfa">دهون (جم)</label><input id="dfa" inputmode="decimal"></div></div><button class="btn alt block" style="margin-top:10px" data-act="addcustom">أضف على ')+_(U.meal)+'</button></div>';
   const y=new Date();y.setDate(y.getDate()-1);const yk=dkey(y);
-  h+='<div class="row sp"><h2>اللي أكلته</h2><button class="btn alt sm" data-act="copyyest"'+(dayMeals(yk).length?'':' disabled')+'>انسخ إمبارح</button></div>';
+  h+=_('<div class="row sp"><h2>اللي أكلته</h2><button class="btn alt sm" data-act="copyyest"')+(dayMeals(yk).length?'':' disabled')+_('>انسخ إمبارح</button></div>');
   const list=dayMeals(k);
-  if(!list.length)h+='<div class="card muted">لسه مسجلتش أي أكل النهاردة.</div>';
+  if(!list.length)h+=_('<div class="card muted">لسه مسجلتش أي أكل النهاردة.</div>');
   else{h+='<div class="card">';
     MEALS.forEach(m=>{const items=list.filter(x=>x.meal===m);if(!items.length)return;
-      h+='<div class="muted" style="margin:6px 0 0">'+_(m)+'</div>'+items.map(x=>'<div class="item"><div class="grow">'+mealLabel(x)+'<div class="muted num">'+fmt(x.k)+' سعر · ب '+fmt(x.p)+' · ك '+fmt(x.c)+' · د '+fmt(x.f)+'</div></div><span class="row"><button class="x" data-act="editmeal" data-id="'+x.id+'" aria-label="تعديل">✎</button><button class="x" data-act="delmeal" data-id="'+x.id+'" aria-label="مسح">✕</button></span></div>').join('')});
+      h+='<div class="muted" style="margin:6px 0 0">'+_(m)+'</div>'+items.map(x=>'<div class="item"><div class="grow">'+mealLabel(x)+'<div class="muted num">'+fmt(x.k)+_(' سعر · ب ')+fmt(x.p)+_(' · ك ')+fmt(x.c)+_(' · د ')+fmt(x.f)+'</div></div><span class="row"><button class="x" data-act="editmeal" data-id="'+x.id+_('" aria-label="تعديل">✎</button><button class="x" data-act="delmeal" data-id="')+x.id+_('" aria-label="مسح">✕</button></span></div>')).join('')});
     h+='</div>';}
   const days=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d)}
-  const DN=['أحد','اثنين','ثلاثاء','أربع','خميس','جمعة','سبت'];
-  h+='<div class="card"><h3>السعرات آخر 7 أيام</h3>'+bars(days.map(d=>Math.round(dayTotals(dkey(d)).k)),days.map(d=>DN[d.getDay()]),6)+'</div>';
+  const DN=[_('أحد'),_('اثنين'),_('ثلاثاء'),_('أربع'),_('خميس'),_('جمعة'),_('سبت')];
+  h+=_('<div class="card"><h3>السعرات آخر 7 أيام</h3>')+bars(days.map(d=>Math.round(dayTotals(dkey(d)).k)),days.map(d=>DN[d.getDay()]),6)+'</div>';
   return h;
 }
 
 function vProg(){
-  let h='<h2>تقدمك</h2>';
+  let h=_('<h2>تقدمك</h2>');
   const ws=S.weights;
-  h+='<div class="card"><div class="row sp"><h3 style="margin:0">الوزن</h3><span class="muted num">'+(ws.length?ws[ws.length-1].kg+' كجم':'—')+'</span></div>';
-  h+=ws.length>=2?line(ws.map(x=>({y:x.kg}))):'<div class="muted" style="margin:8px 0">سجّل وزنك مرتين على الأقل عشان يظهر الرسم.</div>';
-  if(+S.profile.targetWeight&&ws.length)h+='<div class="muted">المستهدف: '+S.profile.targetWeight+' كجم</div>';
-  h+='<div class="row" style="margin-top:10px"><input id="wk" inputmode="decimal" placeholder="وزنك النهاردة بالكيلو" aria-label="الوزن"><button class="btn" data-act="addweight">سجّل</button></div></div>';
+  h+=_('<div class="card"><div class="row sp"><h3 style="margin:0">الوزن</h3><span class="muted num">')+(ws.length?ws[ws.length-1].kg+_(' كجم'):'—')+'</span></div>';
+  h+=ws.length>=2?line(ws.map(x=>({y:x.kg}))):_('<div class="muted" style="margin:8px 0">سجّل وزنك مرتين على الأقل عشان يظهر الرسم.</div>');
+  if(+S.profile.targetWeight&&ws.length)h+=_('<div class="muted">المستهدف: ')+S.profile.targetWeight+_(' كجم</div>');
+  h+=_('<div class="row" style="margin-top:10px"><input id="wk" inputmode="decimal" placeholder="وزنك النهاردة بالكيلو" aria-label="الوزن"><button class="btn" data-act="addweight">سجّل</button></div></div>');
   const days=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d)}
   const vols=days.map(d=>S.workouts.filter(w=>w.date===dkey(d)).reduce((s,w)=>s+w.volume,0));
-  const DN=['أحد','اثنين','ثلاثاء','أربع','خميس','جمعة','سبت'];
-  h+='<div class="card"><h3>الحجم آخر 7 أيام (كجم)</h3>'+bars(vols,days.map(d=>DN[d.getDay()]),6)+'</div>';
-  h+='<div class="grid3" style="margin-bottom:12px"><div class="stat"><b>'+S.workouts.length+'</b><span>تمرين</span></div><div class="stat"><b>'+fmt(totalVol())+'</b><span>كجم حجم</span></div><div class="stat"><b>'+streakInfo().best+'</b><span>أطول سلسلة</span></div></div>';
+  const DN=[_('أحد'),_('اثنين'),_('ثلاثاء'),_('أربع'),_('خميس'),_('جمعة'),_('سبت')];
+  h+=_('<div class="card"><h3>الحجم آخر 7 أيام (كجم)</h3>')+bars(vols,days.map(d=>DN[d.getDay()]),6)+'</div>';
+  h+='<div class="grid3" style="margin-bottom:12px"><div class="stat"><b>'+S.workouts.length+_('</b><span>تمرين</span></div><div class="stat"><b>')+fmt(totalVol())+_('</b><span>كجم حجم</span></div><div class="stat"><b>')+streakInfo().best+_('</b><span>أطول سلسلة</span></div></div>');
   /* muscle distribution, last 30 days */
   const from=new Date();from.setDate(from.getDate()-30);const fk=dkey(from);const cnt={};
   S.workouts.filter(w=>w.date>=fk).forEach(w=>w.exercises.forEach(e=>{const m=(exOf(e.ex)||{}).m;if(m)cnt[m]=(cnt[m]||0)+e.sets.length}));
   const mk=MUSCLES.filter(m=>cnt[m]);
-  h+='<div class="card"><h3>مجموعات لكل عضلة (30 يوم)</h3>'+(mk.length?bars(mk.map(m=>cnt[m]),mk):'<div class="muted">هتظهر بعد أول تمرين.</div>')+'</div>';
+  h+=_('<div class="card"><h3>مجموعات لكل عضلة (30 يوم)</h3>')+(mk.length?bars(mk.map(m=>cnt[m]),mk.map(m=>_(m))):_('<div class="muted">هتظهر بعد أول تمرين.</div>'))+'</div>';
   /* per-exercise 1RM */
   const done=[...new Set(S.workouts.flatMap(w=>w.exercises.map(e=>e.ex)))];
   if(done.length){
     const cur=U.pex&&done.includes(U.pex)?U.pex:done[0];
     const pts=[];S.workouts.forEach(w=>{let b=0;w.exercises.forEach(e=>{if(e.ex===cur)e.sets.forEach(s=>{const v=est1(+s.kg||0,+s.reps||0);if(v>b)b=v})});if(b)pts.push({y:Math.round(b*10)/10})});
-    h+='<div class="card"><h3>قوتك في تمرين (1RM تقديري)</h3><select id="pexsel" aria-label="التمرين">'+done.map(id=>'<option value="'+esc(id)+'"'+(id===cur?' selected':'')+'>'+esc(exName(id))+'</option>').join('')+'</select>'+(pts.length>=2?line(pts):'<div class="muted" style="margin-top:8px">محتاج تمرينتين على الأقل.</div>')+'</div>';
+    h+=_('<div class="card"><h3>قوتك في تمرين (1RM تقديري)</h3><select id="pexsel" aria-label="التمرين">')+done.map(id=>'<option value="'+esc(id)+'"'+(id===cur?' selected':'')+'>'+esc(exName(id))+'</option>').join('')+'</select>'+(pts.length>=2?line(pts):_('<div class="muted" style="margin-top:8px">محتاج تمرينتين على الأقل.</div>'))+'</div>';
   }
   const best={};
   S.workouts.forEach(w=>w.exercises.forEach(e=>e.sets.forEach(s=>{const kg=+s.kg||0,r=+s.reps||0;if(!kg||!r)return;const rm=est1(kg,r);if(!best[e.ex]||rm>best[e.ex].rm)best[e.ex]={rm,kg,r}})));
   const ids=Object.keys(best).sort((a,b)=>best[b].rm-best[a].rm).slice(0,8);
-  h+='<div class="card"><h3>أرقامك القياسية</h3>'+(ids.length?ids.map(id=>'<div class="item"><div class="grow">'+esc(exName(id))+'</div><span class="num"><b>'+best[id].kg+'</b> كجم × '+best[id].r+'</span></div>').join(''):'<div class="muted">هتظهر هنا بعد أول تمرين.</div>')+'</div>';
+  h+=_('<div class="card"><h3>أرقامك القياسية</h3>')+(ids.length?ids.map(id=>'<div class="item"><div class="grow">'+esc(exName(id))+'</div><span class="num"><b>'+best[id].kg+_('</b> كجم × ')+best[id].r+'</span></div>').join(''):_('<div class="muted">هتظهر هنا بعد أول تمرين.</div>'))+'</div>';
   return h;
 }
 
 /* ================= account + coach link ================= */
-const AUTHERR={'auth/invalid-credential':'الإيميل أو الباسورد غلط','auth/wrong-password':'الإيميل أو الباسورد غلط','auth/user-not-found':'الإيميل أو الباسورد غلط','auth/email-already-in-use':'الإيميل ده مسجّل قبل كده','auth/weak-password':'الباسورد ضعيف، استخدم 6 حروف على الأقل','auth/invalid-email':'الإيميل مش مظبوط','auth/network-request-failed':'مفيش اتصال بالإنترنت','auth/too-many-requests':'محاولات كتير، استنى شوية'};
+const AUTHERR={'auth/invalid-credential':_('الإيميل أو الباسورد غلط'),'auth/wrong-password':_('الإيميل أو الباسورد غلط'),'auth/user-not-found':_('الإيميل أو الباسورد غلط'),'auth/email-already-in-use':_('الإيميل ده مسجّل قبل كده'),'auth/weak-password':_('الباسورد ضعيف، استخدم 6 حروف على الأقل'),'auth/invalid-email':_('الإيميل مش مظبوط'),'auth/network-request-failed':_('مفيش اتصال بالإنترنت'),'auth/too-many-requests':_('محاولات كتير، استنى شوية')};
 function isStandalone(){try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}}
 function isCoach(){return !!(C.profile&&C.profile.role==='coach')}
-function installHint(){return /iphone|ipad|ipod/i.test(navigator.userAgent)?'على iPhone: افتح الرابط في Safari، اضغط زر المشاركة ثم «إضافة إلى الشاشة الرئيسية».':'على أندرويد: من قايمة Chrome اختار «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».'}
+function installHint(){return /iphone|ipad|ipod/i.test(navigator.userAgent)?_('على iPhone: افتح الرابط في Safari، اضغط زر المشاركة ثم «إضافة إلى الشاشة الرئيسية».'):_('على أندرويد: من قايمة Chrome اختار «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».')}
 function stopWatchers(){C.unsubs.forEach(u=>{try{u()}catch(e){}});C.unsubs=[];closeClient()}
 function closeClient(){if(U.cc.unMsg){try{U.cc.unMsg()}catch(e){}U.cc.unMsg=null}}
 function msgsHtml(list,me){
-  if(!list.length)return '<div class="muted">لسه مفيش رسايل.</div>';
+  if(!list.length)return _('<div class="muted">لسه مفيش رسايل.</div>');
   return list.map(m=>'<div class="bub '+(m.from===me?'u':'a')+'">'+esc(m.txt)+'<div style="font-size:11px;opacity:.7;margin-top:4px">'+esc(ago(m.ts))+'</div></div>').join('');
 }
 function updateMsgs(){const el=$('#msgs');if(el){el.innerHTML=msgsHtml(C.msgs,'client');el.scrollTop=el.scrollHeight}}
 
 function homeNotice(){
   let h='';
-  if(!isStandalone()&&!S.settings.hideInstall)h+='<div class="card"><div class="row sp"><h3 style="margin:0">ثبّت التطبيق</h3><button class="x" data-act="hideinstall" aria-label="إخفاء">✕</button></div><div class="muted" style="margin:6px 0 10px">'+installHint()+'</div>'+(U.deferred?'<button class="btn block" data-act="install">تثبيت</button>':'')+'</div>';
+  if(!isStandalone()&&!S.settings.hideInstall)h+=_('<div class="card"><div class="row sp"><h3 style="margin:0">ثبّت التطبيق</h3><button class="x" data-act="hideinstall" aria-label="إخفاء">✕</button></div><div class="muted" style="margin:6px 0 10px">')+installHint()+'</div>'+(U.deferred?_('<button class="btn block" data-act="install">تثبيت</button>'):'')+'</div>';
   if(CLOUD&&CLOUD.configured){
-    if(!C.user)h+='<div class="card"><h3>اربط مدربك</h3><div class="muted" style="margin-bottom:10px">سجّل حساب واكتب كود مدربك عشان يتابع معاك تمارينك وأكلك.</div><button class="btn block" data-act="tab" data-v="coach">ابدأ</button></div>';
+    if(!C.user)h+=_('<div class="card"><h3>اربط مدربك</h3><div class="muted" style="margin-bottom:10px">سجّل حساب واكتب كود مدربك عشان يتابع معاك تمارينك وأكلك.</div><button class="btn block" data-act="tab" data-v="coach">ابدأ</button></div>');
     else if(C.profile&&C.profile.coachId){
       const ls=S.lastSync?dkey(new Date(S.lastSync)):'';
-      if(ls!==dkey())h+='<div class="card"><h3>ابعت بياناتك النهاردة</h3><div class="muted" style="margin-bottom:10px">مدربك بيتابع معاك. اضغط عشان بياناتك توصله.</div><button class="btn block" data-act="syncnow">ابعت دلوقتي</button></div>';
+      if(ls!==dkey())h+=_('<div class="card"><h3>ابعت بياناتك النهاردة</h3><div class="muted" style="margin-bottom:10px">مدربك بيتابع معاك. اضغط عشان بياناتك توصله.</div><button class="btn block" data-act="syncnow">ابعت دلوقتي</button></div>');
     }
   }
   return h;
@@ -657,32 +665,32 @@ function homeNotice(){
 
 function vAuth(){
   const up=U.authMode==='up';
-  let h='<h2>مدربي</h2><div class="card"><div class="chips" style="margin:0 0 12px">'+[['in','تسجيل دخول'],['up','حساب جديد']].map(a=>'<button class="chip'+(U.authMode===a[0]?' on':'')+'" data-act="authmode" data-v="'+a[0]+'">'+a[1]+'</button>').join('')+'</div>';
+  let h=_('<h2>مدربي</h2><div class="card"><div class="chips" style="margin:0 0 12px">')+[['in',_('تسجيل دخول')],['up',_('حساب جديد')]].map(a=>'<button class="chip'+(U.authMode===a[0]?' on':'')+'" data-act="authmode" data-v="'+a[0]+'">'+a[1]+'</button>').join('')+'</div>';
   if(up){
-    h+='<label class="f">أنا</label><div class="chips">'+[['client','عميل'],['coach','مدرب']].map(a=>'<button class="chip'+(U.signRole===a[0]?' on':'')+'" data-act="srole" data-v="'+a[0]+'">'+a[1]+'</button>').join('')+'</div>';
-    h+='<label class="f" for="a_name">الاسم</label><input id="a_name" autocomplete="name" value="'+esc(S.profile.name)+'" style="margin-bottom:10px">';
+    h+=_('<label class="f">أنا</label><div class="chips">')+[['client',_('عميل')],['coach',_('مدرب')]].map(a=>'<button class="chip'+(U.signRole===a[0]?' on':'')+'" data-act="srole" data-v="'+a[0]+'">'+a[1]+'</button>').join('')+'</div>';
+    h+=_('<label class="f" for="a_name">الاسم</label><input id="a_name" autocomplete="name" value="')+esc(S.profile.name)+'" style="margin-bottom:10px">';
   }
-  h+='<label class="f" for="a_email">الإيميل</label><input id="a_email" type="email" autocomplete="email" inputmode="email" style="direction:ltr;margin-bottom:10px">'+
-     '<label class="f" for="a_pw">الباسورد</label><input id="a_pw" type="password" autocomplete="'+(up?'new-password':'current-password')+'" style="direction:ltr">';
-  if(up)h+='<label class="row" style="margin-top:12px;align-items:flex-start"><input type="checkbox" id="a_consent"><span class="muted">'+(U.signRole==='coach'?'أتعهد بالحفاظ على سرية بيانات عملائي واستخدامها لمتابعتهم بس.':'أوافق إن مدربي يشوف تمارينى وأكلي ووزني وقياساتي ونومي وعاداتي.')+'</span></label>';
+  h+=_('<label class="f" for="a_email">الإيميل</label><input id="a_email" type="email" autocomplete="email" inputmode="email" style="direction:ltr;margin-bottom:10px">')+
+     _('<label class="f" for="a_pw">الباسورد</label><input id="a_pw" type="password" autocomplete="')+(up?'new-password':'current-password')+'" style="direction:ltr">';
+  if(up)h+='<label class="row" style="margin-top:12px;align-items:flex-start"><input type="checkbox" id="a_consent"><span class="muted">'+(U.signRole==='coach'?_('أتعهد بالحفاظ على سرية بيانات عملائي واستخدامها لمتابعتهم بس.'):_('أوافق إن مدربي يشوف تمارينى وأكلي ووزني وقياساتي ونومي وعاداتي.'))+'</span></label>';
   if(U.authErr)h+='<div style="color:var(--danger);margin-top:10px">'+esc(U.authErr)+'</div>';
-  h+='<button class="btn block" style="margin-top:14px" data-act="authgo"'+(U.authBusy?' disabled':'')+'>'+(U.authBusy?'ثواني…':(up?'إنشاء الحساب':'دخول'))+'</button>';
-  if(!up)h+='<button class="linkbtn" data-act="authreset">نسيت الباسورد؟</button>';
-  return h+'</div><div class="card muted">التطبيق بيشتغل كامل من غير حساب. الحساب بس عشان بياناتك تتحفظ ومدربك يتابعك.</div>';
+  h+='<button class="btn block" style="margin-top:14px" data-act="authgo"'+(U.authBusy?' disabled':'')+'>'+(U.authBusy?_('ثواني…'):(up?_('إنشاء الحساب'):_('دخول')))+'</button>';
+  if(!up)h+=_('<button class="linkbtn" data-act="authreset">نسيت الباسورد؟</button>');
+  return h+_('</div><div class="card muted">التطبيق بيشتغل كامل من غير حساب. الحساب بس عشان بياناتك تتحفظ ومدربك يتابعك.</div>');
 }
 
 function vCoachTab(){
-  let h='<h2>مدربي</h2>';
-  if(!CLOUD||!CLOUD.configured)return h+'<div class="card muted">ربط المدرب مش متفعّل في النسخة دي. تمرينك وأكلك بيتحفظوا على جهازك بس.</div>';
+  let h=_('<h2>مدربي</h2>');
+  if(!CLOUD||!CLOUD.configured)return h+_('<div class="card muted">ربط المدرب مش متفعّل في النسخة دي. تمرينك وأكلك بيتحفظوا على جهازك بس.</div>');
   if(!C.user)return vAuth();
   const p=C.profile||{};
   if(!p.coachId){
-    h+='<div class="card"><h3>اكتب كود مدربك</h3><div class="muted" style="margin-bottom:10px">مدربك هيشوف تمارينك وأكلك ووزنك وقياساتك ونومك وعاداتك بعد ما تربط نفسك بيه، وتقدر تفصل في أي وقت.</div><div class="row"><input id="jcode" placeholder="مثلا K7M2QX" autocapitalize="characters" autocomplete="off" style="direction:ltr;text-transform:uppercase" aria-label="كود المدرب"><button class="btn" data-act="join">اربط</button></div></div>';
+    h+=_('<div class="card"><h3>اكتب كود مدربك</h3><div class="muted" style="margin-bottom:10px">مدربك هيشوف تمارينك وأكلك ووزنك وقياساتك ونومك وعاداتك بعد ما تربط نفسك بيه، وتقدر تفصل في أي وقت.</div><div class="row"><input id="jcode" placeholder="مثلا K7M2QX" autocapitalize="characters" autocomplete="off" style="direction:ltr;text-transform:uppercase" aria-label="كود المدرب"><button class="btn" data-act="join">اربط</button></div></div>');
   }else{
-    h+='<div class="card"><div class="row sp"><div><div class="muted">مدربك</div><h3 style="margin:0">'+esc(p.coachName||'مدرب')+'</h3></div><button class="btn danger sm" data-act="unlink">فصل</button></div><div class="muted" style="margin:10px 0">آخر مزامنة: <span id="lastsync">'+(S.lastSync?esc(ago(S.lastSync)):'لسه')+'</span></div><button class="btn block" data-act="syncnow">ابعت بياناتي دلوقتي</button><div class="muted" style="margin-top:8px">بياناتك بتتبعت لوحدها بعد كل تسجيل، والزر ده للتأكيد.</div></div>';
-    h+='<div class="card"><h3>رسايل</h3><div class="stack msgs" id="msgs">'+msgsHtml(C.msgs,'client')+'</div><div class="row" style="margin-top:12px"><input id="cmsg" placeholder="اكتب لمدربك" aria-label="رسالة"><button class="btn" data-act="msend">أرسل</button></div></div>';
+    h+=_('<div class="card"><div class="row sp"><div><div class="muted">مدربك</div><h3 style="margin:0">')+esc(p.coachName||_('مدرب'))+_('</h3></div><button class="btn danger sm" data-act="unlink">فصل</button></div><div class="muted" style="margin:10px 0">آخر مزامنة: <span id="lastsync">')+(S.lastSync?esc(ago(S.lastSync)):_('لسه'))+_('</span></div><button class="btn block" data-act="syncnow">ابعت بياناتي دلوقتي</button><div class="muted" style="margin-top:8px">بياناتك بتتبعت لوحدها بعد كل تسجيل، والزر ده للتأكيد.</div></div>');
+    h+=_('<div class="card"><h3>رسايل</h3><div class="stack msgs" id="msgs">')+msgsHtml(C.msgs,'client')+_('</div><div class="row" style="margin-top:12px"><input id="cmsg" placeholder="اكتب لمدربك" aria-label="رسالة"><button class="btn" data-act="msend">أرسل</button></div></div>');
   }
-  h+='<div class="card"><div class="muted">الحساب</div><b style="overflow-wrap:anywhere">'+esc(C.user.email||'')+'</b><button class="btn line block" style="margin-top:10px" data-act="signout">تسجيل خروج</button></div>';
+  h+=_('<div class="card"><div class="muted">الحساب</div><b style="overflow-wrap:anywhere">')+esc(C.user.email||'')+_('</b><button class="btn line block" style="margin-top:10px" data-act="signout">تسجيل خروج</button></div>');
   return h;
 }
 
@@ -705,7 +713,7 @@ async function afterLogin(user){
       CLOUD.watchMessages(user.uid,m=>{C.msgs=m;updateMsgs()}).then(u=>C.unsubs.push(u)).catch(()=>{});
       CLOUD.watchPlan(user.uid,p=>{applyPlan(p);render()}).then(u=>C.unsubs.push(u)).catch(()=>{});
     }
-  }catch(e){toast('تعذر الاتصال بالسيرفر')}
+  }catch(e){toast(_('تعذر الاتصال بالسيرفر'))}
   render();
 }
 async function ensureCode(){
@@ -722,54 +730,54 @@ async function doAuth(){
   if(U.authBusy)return;
   const email=$('#a_email').value.trim(),pw=$('#a_pw').value;
   const up=U.authMode==='up';
-  if(!email||pw.length<6){U.authErr='اكتب الإيميل وباسورد 6 حروف على الأقل';render();return}
+  if(!email||pw.length<6){U.authErr=_('اكتب الإيميل وباسورد 6 حروف على الأقل');render();return}
   if(up){
     const name=$('#a_name').value.trim();
-    if(!name){U.authErr='اكتب اسمك';render();return}
-    if(!$('#a_consent').checked){U.authErr='لازم توافق عشان تكمل';render();return}
+    if(!name){U.authErr=_('اكتب اسمك');render();return}
+    if(!$('#a_consent').checked){U.authErr=_('لازم توافق عشان تكمل');render();return}
     U.pending={role:U.signRole,name};S.profile.name=name;saveLocal();
   }
   U.authBusy=true;U.authErr='';render();
   try{if(up)await CLOUD.signUp(email,pw);else await CLOUD.signIn(email,pw)}
-  catch(e){U.authErr=AUTHERR[e&&e.code]||'حصلت مشكلة، جرّب تاني';U.pending=null}
+  catch(e){U.authErr=AUTHERR[e&&e.code]||_('حصلت مشكلة، جرّب تاني');U.pending=null}
   U.authBusy=false;render();
 }
 async function resetPw(){
   const email=($('#a_email').value||'').trim();
-  if(!email){U.authErr='اكتب إيميلك الأول';render();return}
-  try{await CLOUD.reset(email);toast('بعتنالك رسالة على الإيميل')}catch(e){toast(AUTHERR[e&&e.code]||'تعذر الإرسال')}
+  if(!email){U.authErr=_('اكتب إيميلك الأول');render();return}
+  try{await CLOUD.reset(email);toast(_('بعتنالك رسالة على الإيميل'))}catch(e){toast(AUTHERR[e&&e.code]||_('تعذر الإرسال'))}
 }
-async function signOutNow(){try{await CLOUD.signOut()}catch(e){toast('تعذر تسجيل الخروج')}}
+async function signOutNow(){try{await CLOUD.signOut()}catch(e){toast(_('تعذر تسجيل الخروج'))}}
 async function joinCoach(){
   const code=($('#jcode').value||'').trim().toUpperCase();if(!code)return;
   try{
     const c=await CLOUD.coachByCode(code);
-    if(!c){toast('الكود ده مش موجود');return}
-    await CLOUD.setProfile(C.user.uid,{coachId:c.coachId,coachName:c.name||'مدرب',consentAt:Date.now()});
-    C.profile.coachId=c.coachId;C.profile.coachName=c.name||'مدرب';
-    sync.st='saving';render();await runSync();render();toast('اتربطت بمدربك');
-  }catch(e){toast('تعذر الربط، جرّب تاني')}
+    if(!c){toast(_('الكود ده مش موجود'));return}
+    await CLOUD.setProfile(C.user.uid,{coachId:c.coachId,coachName:c.name||_('مدرب'),consentAt:Date.now()});
+    C.profile.coachId=c.coachId;C.profile.coachName=c.name||_('مدرب');
+    sync.st='saving';render();await runSync();render();toast(_('اتربطت بمدربك'));
+  }catch(e){toast(_('تعذر الربط، جرّب تاني'))}
 }
 async function unlinkCoach(){
-  try{await CLOUD.setProfile(C.user.uid,{coachId:null,coachName:null});C.profile.coachId=null;C.profile.coachName=null;render();toast('اتفصلت عن مدربك')}
-  catch(e){toast('تعذر الفصل')}
+  try{await CLOUD.setProfile(C.user.uid,{coachId:null,coachName:null});C.profile.coachId=null;C.profile.coachName=null;render();toast(_('اتفصلت عن مدربك'))}
+  catch(e){toast(_('تعذر الفصل'))}
 }
 async function syncNow(){
   if(!C.user)return;
   sync.st='saving';setSync();await runSync();
-  toast(sync.st==='ok'?'بياناتك اتحفظت وبعتناها':'تعذر الإرسال، جرّب بعد شوية');
+  toast(sync.st==='ok'?_('بياناتك اتحفظت وبعتناها'):_('تعذر الإرسال، جرّب بعد شوية'));
   if(S.tab==='home')render();
 }
 async function sendMsg(from,uid){
   const el=$('#cmsg');const txt=el&&el.value.trim();if(!txt||!uid)return;
   el.value='';
-  try{await CLOUD.sendMessage(uid,{from,txt,ts:Date.now()})}catch(e){toast('تعذر إرسال الرسالة')}
+  try{await CLOUD.sendMessage(uid,{from,txt,ts:Date.now()})}catch(e){toast(_('تعذر إرسال الرسالة'))}
 }
 function installApp(){const p=U.deferred;if(!p)return;p.prompt();p.userChoice&&p.userChoice.then(()=>{U.deferred=null;render()})}
 function copyInv(){
   const el=$('#invtxt');if(!el)return;const txt=el.textContent;
-  const done=()=>toast('اتنسخت رسالة الدعوة');
-  try{navigator.clipboard.writeText(txt).then(done).catch(()=>toast('انسخ الرسالة بإيدك'))}catch(e){toast('انسخ الرسالة بإيدك')}
+  const done=()=>toast(_('اتنسخت رسالة الدعوة'));
+  try{navigator.clipboard.writeText(txt).then(done).catch(()=>toast(_('انسخ الرسالة بإيدك')))}catch(e){toast(_('انسخ الرسالة بإيدك'))}
 }
 
 /* ----- coach app ----- */
@@ -779,21 +787,21 @@ function renderCoachApp(){
   const h=t==='clients'?(U.cc.sel?(U.cc.edit?vPlanEditor():vClientDetail()):vClients()):(t==='code'?vMyCode():vCoachAcct());
   $('#main').innerHTML=h;
   const nav=$('#nav');nav.style.gridTemplateColumns='repeat(3,1fr)';
-  nav.innerHTML=[['clients','العملاء','coach'],['code','كودي','key'],['acct','حسابي','acct']].map(x=>'<button class="'+(t===x[0]?'on':'')+'" data-act="ctab" data-v="'+x[0]+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+IC[x[2]]+'</svg>'+x[1]+'</button>').join('');
+  nav.innerHTML=[['clients',_('العملاء'),'coach'],['code',_('كودي'),'key'],['acct',_('حسابي'),'acct']].map(x=>'<button class="'+(t===x[0]?'on':'')+'" data-act="ctab" data-v="'+x[0]+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+IC[x[2]]+'</svg>'+x[1]+'</button>').join('');
   renderLayer();setSync();
 }
 function vClients(){
   const L=C.clients.slice().sort((a,b)=>(((a.summary||{}).lastActive||'')<((b.summary||{}).lastActive||''))?-1:1);
-  let h='<h2>عملاؤك</h2>';
-  if(!L.length)return h+'<div class="card muted">لسه محدش ربط نفسه بيك. ابعت كودك لعملائك من تبويب «كودي».</div>';
+  let h=_('<h2>عملاؤك</h2>');
+  if(!L.length)return h+_('<div class="card muted">لسه محدش ربط نفسه بيك. ابعت كودك لعملائك من تبويب «كودي».</div>');
   const today=parseKey(dkey());
   const idleOf=c=>{const la=(c.summary||{}).lastActive;return la?Math.round((today-parseKey(la))/864e5):null};
   const need=L.filter(c=>{const d=idleOf(c);return d===null||d>=3}).length;
-  h+='<div class="grid3" style="margin-bottom:12px"><div class="stat"><b>'+L.length+'</b><span>عميل</span></div><div class="stat"><b>'+(L.length-need)+'</b><span>نشطين</span></div><div class="stat"><b>'+need+'</b><span>محتاج متابعة</span></div></div>';
+  h+='<div class="grid3" style="margin-bottom:12px"><div class="stat"><b>'+L.length+_('</b><span>عميل</span></div><div class="stat"><b>')+(L.length-need)+_('</b><span>نشطين</span></div><div class="stat"><b>')+need+_('</b><span>محتاج متابعة</span></div></div>');
   L.forEach(c=>{
     const s=c.summary||{},idle=idleOf(c);
-    const pill=idle===null?'<span class="pill bad">لسه مبدأش</span>':idle===0?'<span class="pill good">نشط النهاردة</span>':idle>=3?'<span class="pill bad">من '+idle+' يوم</span>':'<span class="pill">من '+idle+' يوم</span>';
-    h+='<button class="card btnlike" data-act="copen" data-id="'+esc(c.uid)+'"><div class="row sp"><b>'+esc(c.name||'عميل')+'</b>'+pill+'</div><div class="muted num" style="margin-top:6px">أسبوع '+(s.weekN||0)+' / '+(s.weekGoal||4)+' · سلسلة '+(s.streak||0)+' · وزن '+(s.weight||'—')+' · '+fmt(s.kcalAvg||0)+' سعر</div><div class="muted" style="font-size:12px;margin-top:2px">آخر مزامنة '+(s.ts?esc(ago(s.ts)):'—')+'</div></button>';
+    const pill=idle===null?_('<span class="pill bad">لسه مبدأش</span>'):idle===0?_('<span class="pill good">نشط النهاردة</span>'):idle>=3?_('<span class="pill bad">من ')+idle+_n(idle,' يوم</span>'):_('<span class="pill">من ')+idle+_n(idle,' يوم</span>');
+    h+='<button class="card btnlike" data-act="copen" data-id="'+esc(c.uid)+'"><div class="row sp"><b>'+esc(c.name||_('عميل'))+'</b>'+pill+_('</div><div class="muted num" style="margin-top:6px">أسبوع ')+(s.weekN||0)+' / '+(s.weekGoal||4)+_(' · سلسلة ')+(s.streak||0)+_(' · وزن ')+(s.weight||'—')+' · '+fmt(s.kcalAvg||0)+_(' سعر</div><div class="muted" style="font-size:12px;margin-top:2px">آخر مزامنة ')+(s.ts?esc(ago(s.ts)):'—')+'</div></button>';
   });
   return h;
 }
@@ -807,82 +815,82 @@ async function openClient(id){
 }
 function vClientDetail(){
   const c=U.cc.sel,d=U.cc.detail;
-  let h='<button class="back" data-act="cback">← العملاء</button><h2 style="margin-top:4px">'+esc(c.name||'عميل')+'</h2>';
-  if(!d||d.loading)return h+'<div class="card muted">جاري تحميل البيانات…</div>';
-  if(d.err)return h+'<div class="card muted">تعذر تحميل بيانات العميل.</div>';
+  let h=_('<button class="back" data-act="cback">← العملاء</button><h2 style="margin-top:4px">')+esc(c.name||_('عميل'))+'</h2>';
+  if(!d||d.loading)return h+_('<div class="card muted">جاري تحميل البيانات…</div>');
+  if(d.err)return h+_('<div class="card muted">تعذر تحميل بيانات العميل.</div>');
   const T=d.T,p=T.profile,t=targets(p,d.plan),s=c.summary||{};
   const exN=id=>(EXS.concat(T.customEx||[]).find(e=>e.id===id)||{n:id}).n;
-  if(!d.ok)h+='<div class="card muted">العميل لسه معملش مزامنة لبياناته.</div>';
+  if(!d.ok)h+=_('<div class="card muted">العميل لسه معملش مزامنة لبياناته.</div>');
   const wt=T.weights.length?T.weights[T.weights.length-1].kg:p.weight;
-  h+='<div class="card"><div class="muted">'+(p.sex==='m'?'ذكر':'أنثى')+' · '+p.age+' سنة · '+p.height+' سم · الهدف: '+({cut:'تنشيف',maintain:'ثبات',bulk:'تضخيم'}[p.goal]||'')+' · '+esc(p.program==='coach'&&d.plan&&d.plan.program?('برنامج المدرب: '+(d.plan.program.name||'')):((PROGRAMS[p.program]||{}).n||''))+'</div><div class="grid3" style="margin-top:10px"><div class="stat"><b>'+wt+'</b><span>وزن كجم</span></div><div class="stat"><b>'+(s.weekN||0)+' / '+(s.weekGoal||4)+'</b><span>تمرين الأسبوع</span></div><div class="stat"><b>'+(s.streak||0)+'</b><span>سلسلة</span></div></div><div class="muted" style="margin-top:8px">آخر مزامنة '+(s.ts?esc(ago(s.ts)):'—')+'</div></div>';
+  h+='<div class="card"><div class="muted">'+(p.sex==='m'?_('ذكر'):_('أنثى'))+' · '+p.age+_(' سنة · ')+p.height+_(' سم · الهدف: ')+({cut:_('تنشيف'),maintain:_('ثبات'),bulk:_('تضخيم')}[p.goal]||'')+' · '+esc(p.program==='coach'&&d.plan&&d.plan.program?(_('برنامج المدرب: ')+(d.plan.program.name||'')):((PROGRAMS[p.program]||{}).n||''))+'</div><div class="grid3" style="margin-top:10px"><div class="stat"><b>'+wt+_('</b><span>وزن كجم</span></div><div class="stat"><b>')+(s.weekN||0)+' / '+(s.weekGoal||4)+_('</b><span>تمرين الأسبوع</span></div><div class="stat"><b>')+(s.streak||0)+_('</b><span>سلسلة</span></div></div><div class="muted" style="margin-top:8px">آخر مزامنة ')+(s.ts?esc(ago(s.ts)):'—')+'</div></div>';
   h+=planSummary(c,d,t);
-  h+='<div class="card"><div class="row sp"><h3 style="margin:0">الوزن</h3>'+(+p.targetWeight?'<span class="muted">المستهدف '+p.targetWeight+'</span>':'')+'</div>'+(T.weights.length>=2?line(T.weights.map(x=>({y:x.kg}))):'<div class="muted" style="margin-top:6px">مفيش تسجيلات كفاية.</div>')+'</div>';
+  h+=_('<div class="card"><div class="row sp"><h3 style="margin:0">الوزن</h3>')+(+p.targetWeight?_('<span class="muted">المستهدف ')+p.targetWeight+'</span>':'')+'</div>'+(T.weights.length>=2?line(T.weights.map(x=>({y:x.kg}))):_('<div class="muted" style="margin-top:6px">مفيش تسجيلات كفاية.</div>'))+'</div>';
   const days=[];for(let i=6;i>=0;i--){const dd=new Date();dd.setDate(dd.getDate()-i);days.push(dd)}
-  const DN=['أحد','اثنين','ثلاثاء','أربع','خميس','جمعة','سبت'];
-  h+='<div class="card"><h3>حجم التمرين آخر 7 أيام (كجم)</h3>'+bars(days.map(x=>T.workouts.filter(w=>w.date===dkey(x)).reduce((a,w)=>a+w.volume,0)),days.map(x=>DN[x.getDay()]),6)+'</div>';
-  h+='<div class="card"><h3>آخر تمارين</h3>'+(T.workouts.length?T.workouts.slice().reverse().slice(0,8).map(w=>'<div class="item"><div class="grow"><b>'+esc(w.name)+'</b>'+(w.prs?' <span class="pill">'+w.prs+' رقم قياسي</span>':'')+'<div class="muted">'+esc(fmtDate(w.date))+' · '+w.dur+' دقيقة · '+w.sets+' مجموعة · '+fmt(w.volume)+' كجم</div><div class="muted">'+w.exercises.map(e=>esc(exN(e.ex))+' '+e.sets.map(x=>(x.kg||0)+'×'+(x.reps||0)).slice(0,4).join('، ')).join('<br>')+'</div>'+(w.note?'<div>'+esc(w.note)+'</div>':'')+'</div></div>').join(''):'<div class="muted">مفيش تمارين لسه.</div>')+'</div>';
-  if(T.cardio.length)h+='<div class="card"><h3>كارديو</h3>'+T.cardio.slice().reverse().slice(0,5).map(x=>'<div class="item"><div class="grow"><b>'+esc((CARDIO.find(k=>k[0]===x.type)||[0,x.type])[1])+'</b><div class="muted">'+esc(fmtDate(x.date))+' · '+x.min+' دقيقة'+(x.km?' · '+x.km+' كم':'')+' · '+fmt(x.kcal)+' سعر</div></div></div>').join('')+'</div>';
+  const DN=[_('أحد'),_('اثنين'),_('ثلاثاء'),_('أربع'),_('خميس'),_('جمعة'),_('سبت')];
+  h+=_('<div class="card"><h3>حجم التمرين آخر 7 أيام (كجم)</h3>')+bars(days.map(x=>T.workouts.filter(w=>w.date===dkey(x)).reduce((a,w)=>a+w.volume,0)),days.map(x=>DN[x.getDay()]),6)+'</div>';
+  h+=_('<div class="card"><h3>آخر تمارين</h3>')+(T.workouts.length?T.workouts.slice().reverse().slice(0,8).map(w=>'<div class="item"><div class="grow"><b>'+esc(w.name)+'</b>'+(w.prs?' <span class="pill">'+w.prs+_n(w.prs,' رقم قياسي</span>'):'')+'<div class="muted">'+esc(fmtDate(w.date))+' · '+w.dur+_(' دقيقة · ')+w.sets+_n(w.sets,' مجموعة · ')+fmt(w.volume)+_(' كجم</div><div class="muted">')+w.exercises.map(e=>esc(exN(e.ex))+' '+e.sets.map(x=>(x.kg||0)+'×'+(x.reps||0)).slice(0,4).join(_('، '))).join('<br>')+'</div>'+(w.note?'<div>'+esc(w.note)+'</div>':'')+'</div></div>').join(''):_('<div class="muted">مفيش تمارين لسه.</div>'))+'</div>';
+  if(T.cardio.length)h+=_('<div class="card"><h3>كارديو</h3>')+T.cardio.slice().reverse().slice(0,5).map(x=>'<div class="item"><div class="grow"><b>'+esc((CARDIO.find(k=>k[0]===x.type)||[0,x.type])[1])+'</b><div class="muted">'+esc(fmtDate(x.date))+' · '+x.min+_(' دقيقة')+(x.km?' · '+x.km+_(' كم'):'')+' · '+fmt(x.kcal)+_(' سعر</div></div></div>')).join('')+'</div>';
   const kc=days.map(x=>Math.round(sumDay(T.meals,dkey(x)).k));
   const logged=days.filter(x=>(T.meals[dkey(x)]||[]).length);
   const avgP=logged.length?logged.reduce((a,x)=>a+sumDay(T.meals,dkey(x)).p,0)/logged.length:0;
-  h+='<div class="card"><h3>السعرات آخر 7 أيام</h3>'+bars(kc,days.map(x=>DN[x.getDay()]),6)+'<div class="muted" style="margin-top:8px">المستهدف '+fmt(t.kcal)+' سعر · متوسط البروتين '+fmt(avgP)+' من '+t.p+' جم · سجّل أكل '+logged.length+' من 7 أيام</div></div>';
+  h+=_('<div class="card"><h3>السعرات آخر 7 أيام</h3>')+bars(kc,days.map(x=>DN[x.getDay()]),6)+_('<div class="muted" style="margin-top:8px">المستهدف ')+fmt(t.kcal)+_(' سعر · متوسط البروتين ')+fmt(avgP)+_(' من ')+t.p+_(' جم · سجّل أكل ')+logged.length+_(' من 7 أيام</div></div>');
   const sl=days.map(x=>(T.sleep[dkey(x)]||{}).h).filter(Boolean);
   const hl=T.habits.list||[];
   const hdone=hl.length?days.reduce((a,x)=>a+hl.filter(hh=>((T.habits.log[dkey(x)]||[]).includes(hh.id))).length,0)/(hl.length*7)*100:0;
-  h+='<div class="card"><div class="grid3"><div class="stat"><b>'+(sl.length?f1(sl.reduce((a,b)=>a+b,0)/sl.length):'—')+'</b><span>متوسط النوم</span></div><div class="stat"><b>'+Math.round(hdone)+'%</b><span>التزام بالعادات</span></div><div class="stat"><b>'+(fL(T.water[dkey()]||0)+' / '+fL((+p.waterL>0?+p.waterL:2.5)*1000))+'</b><span>مياه النهاردة (لتر)</span></div></div></div>';
+  h+='<div class="card"><div class="grid3"><div class="stat"><b>'+(sl.length?f1(sl.reduce((a,b)=>a+b,0)/sl.length):'—')+_('</b><span>متوسط النوم</span></div><div class="stat"><b>')+Math.round(hdone)+_('%</b><span>التزام بالعادات</span></div><div class="stat"><b>')+(fL(T.water[dkey()]||0)+' / '+fL((+p.waterL>0?+p.waterL:2.5)*1000))+_('</b><span>مياه النهاردة (لتر)</span></div></div></div>');
   const m=T.measures[T.measures.length-1];
-  if(m)h+='<div class="card"><h3>آخر قياسات · '+esc(fmtDate(m.date))+'</h3>'+MS.filter(f=>m[f[0]]).map(f=>'<div class="item"><div class="grow">'+f[1]+'</div><b class="num">'+m[f[0]]+' سم</b></div>').join('')+'</div>';
-  h+='<div class="card"><h3>رسايل مع '+esc(c.name||'العميل')+'</h3><div class="stack msgs" id="cmsgs">'+msgsHtml(U.cc.msgs,'coach')+'</div><div class="row" style="margin-top:12px"><input id="cmsg" placeholder="اكتب رسالة أو ملاحظة" aria-label="رسالة"><button class="btn" data-act="csend">أرسل</button></div></div>';
+  if(m)h+=_('<div class="card"><h3>آخر قياسات · ')+esc(fmtDate(m.date))+'</h3>'+MS.filter(f=>m[f[0]]).map(f=>'<div class="item"><div class="grow">'+f[1]+'</div><b class="num">'+m[f[0]]+_(' سم</b></div>')).join('')+'</div>';
+  h+=_('<div class="card"><h3>رسايل مع ')+esc(c.name||_('العميل'))+'</h3><div class="stack msgs" id="cmsgs">'+msgsHtml(U.cc.msgs,'coach')+_('</div><div class="row" style="margin-top:12px"><input id="cmsg" placeholder="اكتب رسالة أو ملاحظة" aria-label="رسالة"><button class="btn" data-act="csend">أرسل</button></div></div>');
   return h;
 }
 function planSummary(c,d,t){
   const pl=d.plan;
-  let h='<div class="card"><div class="row sp"><h3 style="margin:0">خطة '+esc(c.name||'العميل')+'</h3><button class="btn sm" data-act="cplanedit">تعديل الخطة</button></div>';
-  h+='<div class="muted num" style="margin-top:8px">سعرات '+fmt(t.kcal)+' · بروتين '+t.p+' · كارب '+t.c+' · دهون '+t.f+(t.coach?' (من عندك)':' (تلقائي)')+'</div>';
+  let h=_('<div class="card"><div class="row sp"><h3 style="margin:0">خطة ')+esc(c.name||_('العميل'))+_('</h3><button class="btn sm" data-act="cplanedit">تعديل الخطة</button></div>');
+  h+=_('<div class="muted num" style="margin-top:8px">سعرات ')+fmt(t.kcal)+_(' · بروتين ')+t.p+_(' · كارب ')+t.c+_(' · دهون ')+t.f+(t.coach?_(' (من عندك)'):_(' (تلقائي)'))+'</div>';
   if(pl){
     const bits=[];
-    if(pl.program&&(pl.program.days||[]).length)bits.push('البرنامج: '+(pl.program.name||'مخصص')+' ('+pl.program.days.length+' أيام)');
-    if((pl.trainDays||[]).length)bits.push('أيام التمرين: '+pl.trainDays.map(i=>WD[i]).join('، '));
-    if((pl.meals||[]).length)bits.push('خطة الأكل: '+pl.meals.length+' صنف');
-    if(pl.targets&&+pl.targets.waterL>0)bits.push('المياه: '+pl.targets.waterL+' لتر');
+    if(pl.program&&(pl.program.days||[]).length)bits.push(_('البرنامج: ')+(pl.program.name||_('مخصص'))+' ('+pl.program.days.length+_n(pl.program.days.length,' أيام)'));
+    if((pl.trainDays||[]).length)bits.push(_('أيام التمرين: ')+pl.trainDays.map(i=>WD[i]).join(_('، ')));
+    if((pl.meals||[]).length)bits.push(_('خطة الأكل: ')+pl.meals.length+_n(pl.meals.length,' صنف'));
+    if(pl.targets&&+pl.targets.waterL>0)bits.push(_('المياه: ')+pl.targets.waterL+_(' لتر'));
     if(bits.length)h+='<div class="muted" style="margin-top:4px">'+bits.map(esc).join('<br>')+'</div>';
-    if(pl.updated)h+='<div class="muted" style="font-size:12px;margin-top:4px">آخر تعديل '+ago(pl.updated)+'</div>';
-  }else h+='<div class="muted" style="margin-top:4px">لسه ماعملتش له خطة. اضغط «تعديل الخطة» وظبط السعرات والتمارين والأكل.</div>';
+    if(pl.updated)h+=_('<div class="muted" style="font-size:12px;margin-top:4px">آخر تعديل ')+ago(pl.updated)+'</div>';
+  }else h+=_('<div class="muted" style="margin-top:4px">لسه ماعملتش له خطة. اضغط «تعديل الخطة» وظبط السعرات والتمارين والأكل.</div>');
   return h+'</div>';
 }
 function vPlanEditor(){
   const c=U.cc.sel,d=U.cc.detail,e=U.cc.edit,p=d.T.profile,auto=targets(p,null),tg=e.targets||{};
   const exN=id=>(EXS.concat(d.T.customEx||[]).find(x=>x.id===id)||{n:id}).n;
   const inp=(path,ph,lab,val)=>{const id='cf_'+path.replace(/\./g,'_');return '<div><label class="f" for="'+id+'">'+lab+'</label><input id="'+id+'" inputmode="decimal" data-cf="'+path+'" placeholder="'+esc(ph)+'" value="'+esc(val==null?'':val)+'"></div>'};
-  let h='<button class="back" data-act="cplancancel">← رجوع بدون حفظ</button><h2 style="margin-top:4px">خطة '+esc(c.name||'العميل')+'</h2>';
-  h+='<div class="card"><h3>السعرات والماكروز والمياه</h3><div class="muted" style="margin:4px 0 10px">سيب الخانة فاضية والتطبيق يحسبها تلقائي (الحالي '+fmt(auto.kcal)+' سعر).</div><div class="grid2">'
-    +inp('targets.kcal',auto.kcal,'سعرات يومية',tg.kcal)+inp('targets.p',auto.p,'بروتين (جم)',tg.p)+inp('targets.c',auto.c,'كارب (جم)',tg.c)+inp('targets.f',auto.f,'دهون (جم)',tg.f)
-    +inp('targets.waterL',p.waterL||2.5,'مياه (لتر)',tg.waterL)+inp('weekGoal',p.weekGoal||4,'تمارين في الأسبوع',e.weekGoal)+'</div></div>';
-  h+='<div class="card"><h3>أيام التمرين</h3><div class="row wrap" style="margin-top:8px">'+WD.map((n,i)=>'<button class="chip'+((e.trainDays||[]).includes(i)?' on':'')+'" data-act="ctd" data-i="'+i+'">'+n+'</button>').join('')+'</div></div>';
+  let h=_('<button class="back" data-act="cplancancel">← رجوع بدون حفظ</button><h2 style="margin-top:4px">خطة ')+esc(c.name||_('العميل'))+'</h2>';
+  h+=_('<div class="card"><h3>السعرات والماكروز والمياه</h3><div class="muted" style="margin:4px 0 10px">سيب الخانة فاضية والتطبيق يحسبها تلقائي (الحالي ')+fmt(auto.kcal)+_(' سعر).</div><div class="grid2">')
+    +inp('targets.kcal',auto.kcal,_('سعرات يومية'),tg.kcal)+inp('targets.p',auto.p,_('بروتين (جم)'),tg.p)+inp('targets.c',auto.c,_('كارب (جم)'),tg.c)+inp('targets.f',auto.f,_('دهون (جم)'),tg.f)
+    +inp('targets.waterL',p.waterL||2.5,_('مياه (لتر)'),tg.waterL)+inp('weekGoal',p.weekGoal||4,_('تمارين في الأسبوع'),e.weekGoal)+'</div></div>';
+  h+=_('<div class="card"><h3>أيام التمرين</h3><div class="row wrap" style="margin-top:8px">')+WD.map((n,i)=>'<button class="chip'+((e.trainDays||[]).includes(i)?' on':'')+'" data-act="ctd" data-i="'+i+'">'+n+'</button>').join('')+'</div></div>';
   const pg=e.program;
-  h+='<div class="card"><h3>نظام التمرين</h3>';
+  h+=_('<div class="card"><h3>نظام التمرين</h3>');
   if(!pg){
-    h+='<div class="muted" style="margin:4px 0 10px">ابدأ من برنامج جاهز وعدّل عليه، أو من برنامج فاضي. لو سيبته من غير برنامج العميل يفضل على برنامجه.</div><select id="cpreset" aria-label="البرنامج">'+['__empty'].concat(Object.keys(PROGRAMS).filter(k=>k!=='coach')).map(k=>'<option value="'+k+'">'+(k==='__empty'?'برنامج فاضي':PROGRAMS[k].n)+'</option>').join('')+'</select><button class="btn block" style="margin-top:8px" data-act="cpreset">ابدأ البرنامج</button>';
+    h+=_('<div class="muted" style="margin:4px 0 10px">ابدأ من برنامج جاهز وعدّل عليه، أو من برنامج فاضي. لو سيبته من غير برنامج العميل يفضل على برنامجه.</div><select id="cpreset" aria-label="البرنامج">')+['__empty'].concat(Object.keys(PROGRAMS).filter(k=>k!=='coach')).map(k=>'<option value="'+k+'">'+(k==='__empty'?_('برنامج فاضي'):PROGRAMS[k].n)+'</option>').join('')+_('</select><button class="btn block" style="margin-top:8px" data-act="cpreset">ابدأ البرنامج</button>');
   }else{
-    h+='<div class="grid2"><div><label class="f" for="cf_program_name">اسم البرنامج</label><input id="cf_program_name" data-cf="program.name" value="'+esc(pg.name||'')+'"></div><div><label class="f" for="cf_program_sets">مجموعات لكل تمرين</label><input id="cf_program_sets" inputmode="numeric" data-cf="program.sets" placeholder="3" value="'+esc(pg.sets||'')+'"></div></div>';
-    pg.days.forEach((dy,i)=>{h+='<div class="card" style="margin-top:10px"><div class="row sp"><input data-cf="program.days.'+i+'.n" value="'+esc(dy.n)+'" aria-label="اسم اليوم" style="max-width:70%"><button class="x" data-act="cdayrm" data-i="'+i+'" aria-label="مسح اليوم">✕</button></div>'
-      +dy.ex.map((id,j)=>'<div class="item"><div class="grow">'+esc(exN(id))+'</div><button class="x" data-act="cexrm" data-i="'+i+'" data-j="'+j+'" aria-label="شيل التمرين">✕</button></div>').join('')
-      +'<button class="btn alt sm" style="margin-top:8px" data-act="cexadd" data-i="'+i+'">+ تمرين</button></div>'});
-    h+='<div class="row" style="margin-top:10px"><button class="btn alt sm" data-act="cdayadd">+ يوم</button><button class="btn danger sm" data-act="cprogclear">مسح البرنامج</button></div>';
+    h+=_('<div class="grid2"><div><label class="f" for="cf_program_name">اسم البرنامج</label><input id="cf_program_name" data-cf="program.name" value="')+esc(pg.name||'')+_('"></div><div><label class="f" for="cf_program_sets">مجموعات لكل تمرين</label><input id="cf_program_sets" inputmode="numeric" data-cf="program.sets" placeholder="3" value="')+esc(pg.sets||'')+'"></div></div>';
+    pg.days.forEach((dy,i)=>{h+='<div class="card" style="margin-top:10px"><div class="row sp"><input data-cf="program.days.'+i+'.n" value="'+esc(dy.n)+_('" aria-label="اسم اليوم" style="max-width:70%"><button class="x" data-act="cdayrm" data-i="')+i+_('" aria-label="مسح اليوم">✕</button></div>')
+      +dy.ex.map((id,j)=>'<div class="item"><div class="grow">'+esc(exN(id))+'</div><button class="x" data-act="cexrm" data-i="'+i+'" data-j="'+j+_('" aria-label="شيل التمرين">✕</button></div>')).join('')
+      +'<button class="btn alt sm" style="margin-top:8px" data-act="cexadd" data-i="'+i+_('">+ تمرين</button></div>')});
+    h+=_('<div class="row" style="margin-top:10px"><button class="btn alt sm" data-act="cdayadd">+ يوم</button><button class="btn danger sm" data-act="cprogclear">مسح البرنامج</button></div>');
   }
   h+='</div>';
   const ml=e.meals||[],mealNow=U.cc.meal||'فطار';
-  h+='<div class="card"><h3>خطة الأكل</h3>';
-  if(!ml.length)h+='<div class="muted" style="margin-top:4px">لسه مفيش أكل. ضيف أصناف تحت وهتظهر عند العميل مع زر تسجيل.</div>';
+  h+=_('<div class="card"><h3>خطة الأكل</h3>');
+  if(!ml.length)h+=_('<div class="muted" style="margin-top:4px">لسه مفيش أكل. ضيف أصناف تحت وهتظهر عند العميل مع زر تسجيل.</div>');
   MEALS.forEach(m=>{const it=ml.filter(x=>x.meal===m);if(!it.length)return;
-    h+='<div class="muted" style="margin:8px 0 0">'+_(m)+'</div>'+it.map(x=>'<div class="item"><div class="grow">'+mealLabel(x)+'<div class="muted num">'+fmt(x.k)+' سعر · ب '+fmt(x.p)+' · ك '+fmt(x.c)+' · د '+fmt(x.f)+'</div></div><button class="x" data-act="cmdel" data-id="'+esc(x.id)+'" aria-label="مسح">✕</button></div>').join('')});
-  if(ml.length)h+='<div class="muted num" style="margin-top:8px">إجمالي الخطة '+fmt(ml.reduce((a,x)=>a+(+x.k||0),0))+' سعر · بروتين '+fmt(ml.reduce((a,x)=>a+(+x.p||0),0))+' جم</div>';
-  h+='<div class="muted" style="margin:14px 0 6px">أضف صنف في وجبة:</div>'+chips(MEALS.map(m=>[m,_(m)]),mealNow,'cmeal')
-    +'<div class="row" style="margin:10px 0"><label class="f" for="cfq" style="margin:0">الكمية (جم أو مل)</label><input id="cfq" inputmode="decimal" value="'+esc(U.cc.fqty||'100')+'" style="max-width:100px"></div>'
-    +'<input id="cfsearch" placeholder="دوّر على أكلة أو مشروب" aria-label="بحث" value="'+esc(U.cc.fq||'')+'" style="margin-bottom:8px">'+chips(CATS.filter(c=>!['fav','mine'].includes(c[0])).map(c=>[c[0],_(c[1])]),U.cc.fcat||'all','ccat')+'<div id="cflist" class="flist">'+cfList(U.cc.fq)+'</div>'
-    +'<div class="card" style="margin-top:12px"><h3>صنف مخصص</h3><div class="grid2"><div><label class="f" for="ccn">الاسم</label><input id="ccn"></div><div><label class="f" for="cck">سعرات</label><input id="cck" inputmode="numeric"></div><div><label class="f" for="ccp">بروتين</label><input id="ccp" inputmode="decimal"></div><div><label class="f" for="ccc">كارب</label><input id="ccc" inputmode="decimal"></div><div><label class="f" for="ccf">دهون</label><input id="ccf" inputmode="decimal"></div></div><button class="btn alt block" style="margin-top:10px" data-act="cmadd">أضف للخطة</button></div></div>';
-  h+='<div class="card"><h3>رسالة للعميل</h3><textarea id="cf_note" data-cf="note" placeholder="بتظهر في صفحته الرئيسية" aria-label="رسالة للعميل">'+esc(e.note||'')+'</textarea></div>';
-  h+='<button class="btn block" data-act="cplansave" style="margin:12px 0 6px">حفظ الخطة وإرسالها للعميل</button><button class="btn line block" data-act="cplancancel">إلغاء</button>';
+    h+='<div class="muted" style="margin:8px 0 0">'+_(m)+'</div>'+it.map(x=>'<div class="item"><div class="grow">'+mealLabel(x)+'<div class="muted num">'+fmt(x.k)+_(' سعر · ب ')+fmt(x.p)+_(' · ك ')+fmt(x.c)+_(' · د ')+fmt(x.f)+'</div></div><button class="x" data-act="cmdel" data-id="'+esc(x.id)+_('" aria-label="مسح">✕</button></div>')).join('')});
+  if(ml.length)h+=_('<div class="muted num" style="margin-top:8px">إجمالي الخطة ')+fmt(ml.reduce((a,x)=>a+(+x.k||0),0))+_(' سعر · بروتين ')+fmt(ml.reduce((a,x)=>a+(+x.p||0),0))+_(' جم</div>');
+  h+=_('<div class="muted" style="margin:14px 0 6px">أضف صنف في وجبة:</div>')+chips(MEALS.map(m=>[m,_(m)]),mealNow,'cmeal')
+    +_('<div class="row" style="margin:10px 0"><label class="f" for="cfq" style="margin:0">الكمية (جم أو مل)</label><input id="cfq" inputmode="decimal" value="')+esc(U.cc.fqty||'100')+'" style="max-width:100px"></div>'
+    +_('<input id="cfsearch" placeholder="دوّر على أكلة أو مشروب" aria-label="بحث" value="')+esc(U.cc.fq||'')+'" style="margin-bottom:8px">'+chips(CATS.filter(c=>!['fav','mine'].includes(c[0])).map(c=>[c[0],_(c[1])]),U.cc.fcat||'all','ccat')+'<div id="cflist" class="flist">'+cfList(U.cc.fq)+'</div>'
+    +_('<div class="card" style="margin-top:12px"><h3>صنف مخصص</h3><div class="grid2"><div><label class="f" for="ccn">الاسم</label><input id="ccn"></div><div><label class="f" for="cck">سعرات</label><input id="cck" inputmode="numeric"></div><div><label class="f" for="ccp">بروتين</label><input id="ccp" inputmode="decimal"></div><div><label class="f" for="ccc">كارب</label><input id="ccc" inputmode="decimal"></div><div><label class="f" for="ccf">دهون</label><input id="ccf" inputmode="decimal"></div></div><button class="btn alt block" style="margin-top:10px" data-act="cmadd">أضف للخطة</button></div></div>');
+  h+=_('<div class="card"><h3>رسالة للعميل</h3><textarea id="cf_note" data-cf="note" placeholder="بتظهر في صفحته الرئيسية" aria-label="رسالة للعميل">')+esc(e.note||'')+'</textarea></div>';
+  h+=_('<button class="btn block" data-act="cplansave" style="margin:12px 0 6px">حفظ الخطة وإرسالها للعميل</button><button class="btn line block" data-act="cplancancel">إلغاء</button>');
   return h;
 }
 async function saveClientPlan(){
@@ -894,108 +902,108 @@ async function saveClientPlan(){
     meals:(e.meals||[]).map(x=>({id:x.id,meal:x.meal,name:x.name,fid:x.fid||'',g:+x.g||0,u:x.u||'',k:+x.k||0,p:+x.p||0,c:+x.c||0,f:+x.f||0})),program:null};
   const pg=e.program;
   if(pg&&pg.days.length){
-    const days=pg.days.map((x,i)=>({n:(x.n||'').trim()||('يوم '+(i+1)),ex:x.ex.slice()})).filter(x=>x.ex.length);
+    const days=pg.days.map((x,i)=>({n:(x.n||'').trim()||(_('يوم ')+(i+1)),ex:x.ex.slice()})).filter(x=>x.ex.length);
     if(days.length)plan.program={name:(pg.name||'').trim(),sets:num(pg.sets),days};
   }
-  toast('جاري الحفظ…');
-  try{await CLOUD.setPlan(c.uid,plan);U.cc.detail.plan=plan;U.cc.edit=null;renderCoachApp();window.scrollTo(0,0);toast('اتحفظت الخطة وهتظهر عند العميل')}
-  catch(err){toast('تعذر حفظ الخطة. اتأكد إنك نشرت قواعد Firebase الجديدة')}
+  toast(_('جاري الحفظ…'));
+  try{await CLOUD.setPlan(c.uid,plan);U.cc.detail.plan=plan;U.cc.edit=null;renderCoachApp();window.scrollTo(0,0);toast(_('اتحفظت الخطة وهتظهر عند العميل'))}
+  catch(err){toast(_('تعذر حفظ الخطة. اتأكد إنك نشرت قواعد Firebase الجديدة'))}
 }
 function vMyCode(){
   const code=(C.profile&&C.profile.code)||'—';
   const link=location.origin+location.pathname.replace(/index\.html$/,'');
-  const msg='حمّل تطبيق Hassanfit من الرابط ده: '+link+'\nوبعد ما تسجّل اكتب كود الدعوة: '+code;
-  return '<h2>كودك</h2><div class="card"><div class="muted" style="text-align:center">كود الدعوة</div><div class="code">'+esc(code)+'</div><div class="muted" style="margin:10px 0;white-space:pre-wrap;overflow-wrap:anywhere" id="invtxt">'+esc(msg)+'</div><button class="btn block" data-act="copyinv">انسخ رسالة الدعوة</button></div><div class="card muted">العميل بيسجّل حساب ويكتب الكود مرة واحدة، وبعدها تمارينه وأكله بيظهروا لك في تبويب العملاء.</div>';
+  const msg=_('حمّل تطبيق Hassanfit من الرابط ده: ')+link+_('\nوبعد ما تسجّل اكتب كود الدعوة: ')+code;
+  return _('<h2>كودك</h2><div class="card"><div class="muted" style="text-align:center">كود الدعوة</div><div class="code">')+esc(code)+'</div><div class="muted" style="margin:10px 0;white-space:pre-wrap;overflow-wrap:anywhere" id="invtxt">'+esc(msg)+_('</div><button class="btn block" data-act="copyinv">انسخ رسالة الدعوة</button></div><div class="card muted">العميل بيسجّل حساب ويكتب الكود مرة واحدة، وبعدها تمارينه وأكله بيظهروا لك في تبويب العملاء.</div>');
 }
 function vCoachAcct(){
-  return '<h2>حسابي</h2><div class="card"><div class="muted">مدرب</div><h3 style="margin:0">'+esc((C.profile&&C.profile.name)||'')+'</h3><div class="muted" style="overflow-wrap:anywhere;margin-bottom:12px">'+esc((C.user&&C.user.email)||'')+'</div><button class="btn line block" data-act="signout">تسجيل خروج</button></div>';
+  return _('<h2>حسابي</h2><div class="card"><div class="muted">مدرب</div><h3 style="margin:0">')+esc((C.profile&&C.profile.name)||'')+'</h3><div class="muted" style="overflow-wrap:anywhere;margin-bottom:12px">'+esc((C.user&&C.user.email)||'')+_('</div><button class="btn line block" data-act="signout">تسجيل خروج</button></div>');
 }
 
 /* ----- "more" hub and sub views ----- */
-const MORE=[['cardio','الكارديو','جري، عجلة، سباحة'],['body','قياسات الجسم','وسط، صدر، دراع'],['well','صحتي اليومية','نوم، عادات، مزاج'],['cal','التقويم','أيام تمرينك'],['ach','الإنجازات','شارات وأهداف'],['tools','أدوات','1RM، أوزان، تايمر'],['set','الإعدادات','ملفك، نسخ احتياطي']];
+const MORE=[['cardio',_('الكارديو'),_('جري، عجلة، سباحة')],['body',_('قياسات الجسم'),_('وسط، صدر، دراع')],['well',_('صحتي اليومية'),_('نوم، عادات، مزاج')],['cal',_('التقويم'),_('أيام تمرينك')],['ach',_('الإنجازات'),_('شارات وأهداف')],['tools',_('أدوات'),_('1RM، أوزان، تايمر')],['set',_('الإعدادات'),_('ملفك، نسخ احتياطي')]];
 function vMore(){
-  const m=({cardio:vCardio,body:vBody,well:vWell,cal:vCal,ach:vAch,tools:vTools,set:vSet})[S.sub];if(S.sub&&m){const t=MORE.find(x=>x[0]===S.sub);return '<button class="back" data-act="sub" data-v="">← رجوع</button><h2 style="margin-top:4px">'+esc(t[1])+'</h2>'+m()}
-  return '<h2>المزيد</h2><div class="tiles">'+MORE.map(m=>'<button class="tile" data-act="sub" data-v="'+m[0]+'"><b>'+m[1]+'</b><span class="muted">'+m[2]+'</span></button>').join('')+'</div>';
+  const m=({cardio:vCardio,body:vBody,well:vWell,cal:vCal,ach:vAch,tools:vTools,set:vSet})[S.sub];if(S.sub&&m){const t=MORE.find(x=>x[0]===S.sub);return _('<button class="back" data-act="sub" data-v="">← رجوع</button><h2 style="margin-top:4px">')+esc(t[1])+'</h2>'+m()}
+  return _('<h2>المزيد</h2><div class="tiles">')+MORE.map(m=>'<button class="tile" data-act="sub" data-v="'+m[0]+'"><b>'+m[1]+'</b><span class="muted">'+m[2]+'</span></button>').join('')+'</div>';
 }
 
 function vCardio(){
   const p=S.profile;
   let h=chips(CARDIO.map(c=>[c[0],c[1]]),U.cardioType,'ctype');
-  h+='<div class="card"><div class="grid2"><div><label class="f" for="cmin">المدة (دقيقة)</label><input id="cmin" inputmode="numeric" value="30"></div><div><label class="f" for="ckm">المسافة (كم، اختياري)</label><input id="ckm" inputmode="decimal"></div></div><button class="btn block" style="margin-top:10px" data-act="addcardio">سجّل الكارديو</button><div class="muted" style="margin-top:8px">السعرات بتتحسب من نوع النشاط ووزنك ('+p.weight+' كجم).</div></div>';
+  h+=_('<div class="card"><div class="grid2"><div><label class="f" for="cmin">المدة (دقيقة)</label><input id="cmin" inputmode="numeric" value="30"></div><div><label class="f" for="ckm">المسافة (كم، اختياري)</label><input id="ckm" inputmode="decimal"></div></div><button class="btn block" style="margin-top:10px" data-act="addcardio">سجّل الكارديو</button><div class="muted" style="margin-top:8px">السعرات بتتحسب من نوع النشاط ووزنك (')+p.weight+_(' كجم).</div></div>');
   const ws=dkey(weekStart(new Date()));const wk=S.cardio.filter(c=>c.date>=ws);
-  h+='<div class="grid3" style="margin-bottom:12px"><div class="stat"><b>'+wk.length+'</b><span>جلسة الأسبوع</span></div><div class="stat"><b>'+f1(wk.reduce((s,c)=>s+(+c.km||0),0))+'</b><span>كم</span></div><div class="stat"><b>'+fmt(wk.reduce((s,c)=>s+c.kcal,0))+'</b><span>سعر</span></div></div>';
-  h+='<div class="card"><h3>السجل</h3>'+(S.cardio.length?S.cardio.slice().reverse().slice(0,15).map(c=>'<div class="item"><div class="grow"><b>'+esc((CARDIO.find(x=>x[0]===c.type)||[0,c.type])[1])+'</b><div class="muted">'+esc(fmtDate(c.date))+' · '+c.min+' دقيقة'+(c.km?' · '+c.km+' كم':'')+' · '+fmt(c.kcal)+' سعر</div></div><button class="x" data-act="delcardio" data-id="'+c.id+'" aria-label="مسح">✕</button></div>').join(''):'<div class="muted">لسه مفيش كارديو مسجل.</div>')+'</div>';
+  h+='<div class="grid3" style="margin-bottom:12px"><div class="stat"><b>'+wk.length+_('</b><span>جلسة الأسبوع</span></div><div class="stat"><b>')+f1(wk.reduce((s,c)=>s+(+c.km||0),0))+_('</b><span>كم</span></div><div class="stat"><b>')+fmt(wk.reduce((s,c)=>s+c.kcal,0))+_('</b><span>سعر</span></div></div>');
+  h+=_('<div class="card"><h3>السجل</h3>')+(S.cardio.length?S.cardio.slice().reverse().slice(0,15).map(c=>'<div class="item"><div class="grow"><b>'+esc((CARDIO.find(x=>x[0]===c.type)||[0,c.type])[1])+'</b><div class="muted">'+esc(fmtDate(c.date))+' · '+c.min+_(' دقيقة')+(c.km?' · '+c.km+_(' كم'):'')+' · '+fmt(c.kcal)+_(' سعر</div></div><button class="x" data-act="delcardio" data-id="')+c.id+_('" aria-label="مسح">✕</button></div>')).join(''):_('<div class="muted">لسه مفيش كارديو مسجل.</div>'))+'</div>';
   return h;
 }
 
 function vBody(){
   const m=S.measures;const last=m[m.length-1]||{},first=m[0]||{};
-  let h='<div class="card"><h3>قياس جديد (سم)</h3><div class="grid2">'+MS.map(f=>'<div><label class="f" for="m_'+f[0]+'">'+f[1]+'</label><input id="m_'+f[0]+'" inputmode="decimal" placeholder="'+(last[f[0]]||'')+'"></div>').join('')+'</div><button class="btn block" style="margin-top:10px" data-act="addmeasure">سجّل القياسات</button></div>';
+  let h=_('<div class="card"><h3>قياس جديد (سم)</h3><div class="grid2">')+MS.map(f=>'<div><label class="f" for="m_'+f[0]+'">'+f[1]+'</label><input id="m_'+f[0]+'" inputmode="decimal" placeholder="'+(last[f[0]]||'')+'"></div>').join('')+_('</div><button class="btn block" style="margin-top:10px" data-act="addmeasure">سجّل القياسات</button></div>');
   if(m.length){
-    h+='<div class="card"><h3>آخر قياسات · '+esc(fmtDate(last.date))+'</h3>'+MS.filter(f=>last[f[0]]).map(f=>{const d=last[f[0]]-(first[f[0]]||last[f[0]]);return '<div class="item"><div class="grow">'+f[1]+'</div><span class="num"><b>'+last[f[0]]+'</b> سم '+(m.length>1&&d?'<span class="pill">'+(d>0?'+':'')+f1(d)+'</span>':'')+'</span></div>'}).join('')+'</div>';
+    h+=_('<div class="card"><h3>آخر قياسات · ')+esc(fmtDate(last.date))+'</h3>'+MS.filter(f=>last[f[0]]).map(f=>{const d=last[f[0]]-(first[f[0]]||last[f[0]]);return '<div class="item"><div class="grow">'+f[1]+'</div><span class="num"><b>'+last[f[0]]+_('</b> سم ')+(m.length>1&&d?'<span class="pill">'+(d>0?'+':'')+f1(d)+'</span>':'')+'</span></div>'}).join('')+'</div>';
     const pts=m.filter(x=>x[U.mfield]).map(x=>({y:+x[U.mfield]}));
-    h+='<div class="card"><h3>التغيير</h3>'+chips(MS.map(f=>[f[0],f[1]]),U.mfield,'mfield')+(pts.length>=2?line(pts):'<div class="muted">محتاج قياسين على الأقل لنفس العضو.</div>')+'</div>';
+    h+=_('<div class="card"><h3>التغيير</h3>')+chips(MS.map(f=>[f[0],f[1]]),U.mfield,'mfield')+(pts.length>=2?line(pts):_('<div class="muted">محتاج قياسين على الأقل لنفس العضو.</div>'))+'</div>';
   }
   const p=S.profile,bmi=p.weight/Math.pow(p.height/100,2);
-  const cat=bmi<18.5?'نحافة':bmi<25?'طبيعي':bmi<30?'وزن زايد':'سمنة';
-  h+='<div class="card"><div class="row sp"><h3 style="margin:0">مؤشر كتلة الجسم</h3><b class="num">'+f1(bmi)+'</b></div><div class="muted">التصنيف: '+cat+' (تقدير عام، مش تشخيص)</div></div>';
+  const cat=bmi<18.5?_('نحافة'):bmi<25?_('طبيعي'):bmi<30?_('وزن زايد'):_('سمنة');
+  h+=_('<div class="card"><div class="row sp"><h3 style="margin:0">مؤشر كتلة الجسم</h3><b class="num">')+f1(bmi)+_('</b></div><div class="muted">التصنيف: ')+cat+_(' (تقدير عام، مش تشخيص)</div></div>');
   return h;
 }
 
 function vWell(){
   const k=dkey();const sl=S.sleep[k]||{};const mood=S.mood[k];
-  let h='<div class="card"><h3>نومك</h3><div class="row"><input id="slh" inputmode="decimal" placeholder="ساعات النوم" value="'+esc(sl.h||'')+'" aria-label="ساعات النوم"><button class="btn" data-act="savesleep">سجّل</button></div><div class="chips" style="margin-top:10px">'+[1,2,3,4,5].map(q=>'<button class="chip'+(sl.q===q?' on':'')+'" data-act="sleepq" data-v="'+q+'">جودة '+q+'</button>').join('')+'</div>';
+  let h=_('<div class="card"><h3>نومك</h3><div class="row"><input id="slh" inputmode="decimal" placeholder="ساعات النوم" value="')+esc(sl.h||'')+_('" aria-label="ساعات النوم"><button class="btn" data-act="savesleep">سجّل</button></div><div class="chips" style="margin-top:10px">')+[1,2,3,4,5].map(q=>'<button class="chip'+(sl.q===q?' on':'')+'" data-act="sleepq" data-v="'+q+_('">جودة ')+q+'</button>').join('')+'</div>';
   const days=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d)}
-  const DN=['أحد','اثنين','ثلاثاء','أربع','خميس','جمعة','سبت'];
+  const DN=[_('أحد'),_('اثنين'),_('ثلاثاء'),_('أربع'),_('خميس'),_('جمعة'),_('سبت')];
   h+=bars(days.map(d=>(S.sleep[dkey(d)]||{}).h||0),days.map(d=>DN[d.getDay()]),6)+'</div>';
-  h+='<div class="card"><h3>حالتك النهاردة</h3><div class="chips" style="margin:0">'+MOODS.map((m,i)=>'<button class="chip'+(mood===i+1?' on':'')+'" data-act="mood" data-v="'+(i+1)+'">'+m+'</button>').join('')+'</div></div>';
+  h+=_('<div class="card"><h3>حالتك النهاردة</h3><div class="chips" style="margin:0">')+MOODS.map((m,i)=>'<button class="chip'+(mood===i+1?' on':'')+'" data-act="mood" data-v="'+(i+1)+'">'+m+'</button>').join('')+'</div></div>';
   const hl=S.habits.list,hd=S.habits.log[k]||[];
-  h+='<div class="card"><h3>عاداتك</h3>'+(hl.length?hl.map(x=>{let c=0;for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()-i);if((S.habits.log[dkey(d)]||[]).includes(x.id))c++}
-    return '<div class="item"><button class="chk'+(hd.includes(x.id)?' on':'')+'" style="width:44px;flex:none" data-act="habit" data-id="'+x.id+'" aria-label="'+esc(x.n)+'">'+(hd.includes(x.id)?'✓':'')+'</button><div class="grow">'+esc(x.n)+'<div class="muted">'+c+' من 7 أيام</div></div><button class="x" data-act="delhabit" data-id="'+x.id+'" aria-label="مسح">✕</button></div>'}).join(''):'<div class="muted">ضيف عادة تتابعها كل يوم.</div>')+
-   '<div class="row" style="margin-top:10px"><input id="nh" placeholder="عادة جديدة" aria-label="عادة جديدة"><button class="btn sm" data-act="addhabit">أضف</button></div></div>';
+  h+=_('<div class="card"><h3>عاداتك</h3>')+(hl.length?hl.map(x=>{let c=0;for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()-i);if((S.habits.log[dkey(d)]||[]).includes(x.id))c++}
+    return '<div class="item"><button class="chk'+(hd.includes(x.id)?' on':'')+'" style="width:44px;flex:none" data-act="habit" data-id="'+x.id+'" aria-label="'+esc(_(x.n))+'">'+(hd.includes(x.id)?'✓':'')+'</button><div class="grow">'+esc(_(x.n))+'<div class="muted">'+c+_(' من 7 أيام</div></div><button class="x" data-act="delhabit" data-id="')+x.id+_('" aria-label="مسح">✕</button></div>')}).join(''):_('<div class="muted">ضيف عادة تتابعها كل يوم.</div>'))+
+   _('<div class="row" style="margin-top:10px"><input id="nh" placeholder="عادة جديدة" aria-label="عادة جديدة"><button class="btn sm" data-act="addhabit">أضف</button></div></div>');
   return h;
 }
 
 function vCal(){
   const c=U.cal;const first=new Date(c.y,c.m,1);const dim=new Date(c.y,c.m+1,0).getDate();const off=(first.getDay()+1)%7;
   const wset=new Set(S.workouts.map(w=>w.date)),cset=new Set(S.cardio.map(w=>w.date));
-  let h='<div class="card"><div class="row sp"><button class="btn alt sm" data-act="calnav" data-v="1" aria-label="الشهر الجاي">›</button><b>'+AR(first,{month:'long',year:'numeric'})+'</b><button class="btn alt sm" data-act="calnav" data-v="-1" aria-label="الشهر اللي فات">‹</button></div><div class="cal">';
-  ['سبت','أحد','اثنين','ثلاثاء','أربع','خميس','جمعة'].forEach(d=>{h+='<div class="h">'+d+'</div>'});
+  let h=_('<div class="card"><div class="row sp"><button class="btn alt sm" data-act="calnav" data-v="1" aria-label="الشهر الجاي">›</button><b>')+AR(first,{month:'long',year:'numeric'})+_('</b><button class="btn alt sm" data-act="calnav" data-v="-1" aria-label="الشهر اللي فات">‹</button></div><div class="cal">');
+  [_('سبت'),_('أحد'),_('اثنين'),_('ثلاثاء'),_('أربع'),_('خميس'),_('جمعة')].forEach(d=>{h+='<div class="h">'+d+'</div>'});
   for(let i=0;i<off;i++)h+='<button class="e" tabindex="-1" aria-hidden="true"></button>';
   for(let d=1;d<=dim;d++){const k=c.y+'-'+pad(c.m+1)+'-'+pad(d);h+='<button class="'+(wset.has(k)?'w ':'')+(cset.has(k)?'c ':'')+(k===dkey()?'t ':'')+(k===c.sel?'s':'')+'" data-act="calsel" data-v="'+k+'">'+d+'</button>'}
-  h+='</div><div class="muted" style="margin-top:10px">برتقالي: تمرين · أخضر: كارديو</div></div>';
+  h+=_('</div><div class="muted" style="margin-top:10px">برتقالي: تمرين · أخضر: كارديو</div></div>');
   const ws=S.workouts.filter(w=>w.date===c.sel),cs=S.cardio.filter(w=>w.date===c.sel),ml=dayTotals(c.sel);
   h+='<div class="card"><h3>'+esc(fmtDate(c.sel))+'</h3>';
-  if(!ws.length&&!cs.length&&!dayMeals(c.sel).length)h+='<div class="muted">مفيش نشاط مسجل اليوم ده.</div>';
-  ws.forEach(w=>{h+='<div class="item"><div class="grow"><b>'+esc(w.name)+'</b><div class="muted">'+w.dur+' دقيقة · '+w.sets+' مجموعة · '+fmt(w.volume)+' كجم</div></div></div>'});
-  cs.forEach(w=>{h+='<div class="item"><div class="grow"><b>'+esc((CARDIO.find(x=>x[0]===w.type)||[0,w.type])[1])+'</b><div class="muted">'+w.min+' دقيقة · '+fmt(w.kcal)+' سعر</div></div></div>'});
-  if(dayMeals(c.sel).length)h+='<div class="item"><div class="grow"><b>الأكل</b><div class="muted">'+fmt(ml.k)+' سعر · بروتين '+fmt(ml.p)+' جم</div></div></div>';
+  if(!ws.length&&!cs.length&&!dayMeals(c.sel).length)h+=_('<div class="muted">مفيش نشاط مسجل اليوم ده.</div>');
+  ws.forEach(w=>{h+='<div class="item"><div class="grow"><b>'+esc(w.name)+'</b><div class="muted">'+w.dur+_(' دقيقة · ')+w.sets+_n(w.sets,' مجموعة · ')+fmt(w.volume)+_(' كجم</div></div></div>')});
+  cs.forEach(w=>{h+='<div class="item"><div class="grow"><b>'+esc((CARDIO.find(x=>x[0]===w.type)||[0,w.type])[1])+'</b><div class="muted">'+w.min+_(' دقيقة · ')+fmt(w.kcal)+_(' سعر</div></div></div>')});
+  if(dayMeals(c.sel).length)h+=_('<div class="item"><div class="grow"><b>الأكل</b><div class="muted">')+fmt(ml.k)+_(' سعر · بروتين ')+fmt(ml.p)+_(' جم</div></div></div>');
   return h+'</div>';
 }
 
 function vAch(){
   const got=ACH.filter(a=>S.ach[a[0]]).length;
-  let h='<div class="card"><div class="row sp"><h3 style="margin:0">'+got+' من '+ACH.length+'</h3></div><div class="bar" style="margin-top:8px"><i style="width:'+(got/ACH.length*100)+'%"></i></div></div><div class="card">';
+  let h='<div class="card"><div class="row sp"><h3 style="margin:0">'+got+_(' من ')+ACH.length+'</h3></div><div class="bar" style="margin-top:8px"><i style="width:'+(got/ACH.length*100)+'%"></i></div></div><div class="card">';
   h+=ACH.map(a=>'<div class="badge'+(S.ach[a[0]]?' on':'')+'"><div class="medal">'+(S.ach[a[0]]?'★':'·')+'</div><div class="grow"><b>'+esc(a[1])+'</b><div class="muted">'+esc(a[2])+(S.ach[a[0]]?' · '+esc(fmtDate(dkey(new Date(S.ach[a[0]])))):'')+'</div></div></div>').join('');
   return h+'</div>';
 }
 
 function vTools(){
-  let h=chips([['1rm','1RM'],['plates','أطباق'],['interval','تايمر HIIT'],['sw','ستوب ووتش'],['fat','دهون الجسم']],U.tool,'tool');
+  let h=chips([['1rm','1RM'],['plates',_('أطباق')],['interval',_('تايمر HIIT')],['sw',_('ستوب ووتش')],['fat',_('دهون الجسم')]],U.tool,'tool');
   if(U.tool==='1rm'){
-    h+='<div class="card"><div class="grid2"><div><label class="f" for="t_kg">الوزن (كجم)</label><input id="t_kg" inputmode="decimal"></div><div><label class="f" for="t_r">العدّات</label><input id="t_r" inputmode="numeric"></div></div><div id="t_out" style="margin-top:12px"></div></div>';
+    h+=_('<div class="card"><div class="grid2"><div><label class="f" for="t_kg">الوزن (كجم)</label><input id="t_kg" inputmode="decimal"></div><div><label class="f" for="t_r">العدّات</label><input id="t_r" inputmode="numeric"></div></div><div id="t_out" style="margin-top:12px"></div></div>');
   }else if(U.tool==='plates'){
-    h+='<div class="card"><div class="grid2"><div><label class="f" for="t_kg">الوزن المطلوب (كجم)</label><input id="t_kg" inputmode="decimal"></div><div><label class="f" for="t_bar">وزن البار</label><select id="t_bar"><option value="20">20 كجم</option><option value="15">15 كجم</option><option value="10">10 كجم</option></select></div></div><div id="t_out" style="margin-top:12px"></div></div>';
+    h+=_('<div class="card"><div class="grid2"><div><label class="f" for="t_kg">الوزن المطلوب (كجم)</label><input id="t_kg" inputmode="decimal"></div><div><label class="f" for="t_bar">وزن البار</label><select id="t_bar"><option value="20">20 كجم</option><option value="15">15 كجم</option><option value="10">10 كجم</option></select></div></div><div id="t_out" style="margin-top:12px"></div></div>');
   }else if(U.tool==='interval'){
     const t=U.tm;
-    h+='<div class="card"><div class="grid3"><div><label class="f" for="iw">شغل (ث)</label><input id="iw" inputmode="numeric" value="'+t.work+'"></div><div><label class="f" for="ir">راحة (ث)</label><input id="ir" inputmode="numeric" value="'+t.rest+'"></div><div><label class="f" for="in">جولات</label><input id="in" inputmode="numeric" value="'+t.rounds+'"></div></div>'+
-     '<div class="big" id="tmv" style="margin-top:14px">'+mmss(t.running?t.left:t.work)+'</div><div class="row sp muted"><span id="tmp">'+esc(t.phase)+'</span><span id="tmr">'+(t.round?'جولة '+t.round+' / '+t.rounds:'')+'</span></div>'+
-     '<div class="grid2" style="margin-top:12px"><button class="btn" data-act="tmgo">'+(t.running?'إيقاف':'ابدأ')+'</button><button class="btn alt" data-act="tmreset">إعادة</button></div></div>';
+    h+=_('<div class="card"><div class="grid3"><div><label class="f" for="iw">شغل (ث)</label><input id="iw" inputmode="numeric" value="')+t.work+_('"></div><div><label class="f" for="ir">راحة (ث)</label><input id="ir" inputmode="numeric" value="')+t.rest+_('"></div><div><label class="f" for="in">جولات</label><input id="in" inputmode="numeric" value="')+t.rounds+'"></div></div>'+
+     '<div class="big" id="tmv" style="margin-top:14px">'+mmss(t.running?t.left:t.work)+'</div><div class="row sp muted"><span id="tmp">'+esc(_(t.phase))+'</span><span id="tmr">'+(t.round?_('جولة ')+t.round+' / '+t.rounds:'')+'</span></div>'+
+     '<div class="grid2" style="margin-top:12px"><button class="btn" data-act="tmgo">'+(t.running?_('إيقاف'):_('ابدأ'))+_('</button><button class="btn alt" data-act="tmreset">إعادة</button></div></div>');
   }else if(U.tool==='sw'){
-    h+='<div class="card"><div class="big" id="swv">'+mmss((U.sw.acc+(U.sw.run?Date.now()-U.sw.start:0))/1000)+'</div><div class="grid2" style="margin-top:12px"><button class="btn" data-act="swgo">'+(U.sw.run?'إيقاف':'ابدأ')+'</button><button class="btn alt" data-act="swreset">صفّر</button></div></div>';
+    h+='<div class="card"><div class="big" id="swv">'+mmss((U.sw.acc+(U.sw.run?Date.now()-U.sw.start:0))/1000)+'</div><div class="grid2" style="margin-top:12px"><button class="btn" data-act="swgo">'+(U.sw.run?_('إيقاف'):_('ابدأ'))+_('</button><button class="btn alt" data-act="swreset">صفّر</button></div></div>');
   }else{
     const m=S.measures[S.measures.length-1]||{};const p=S.profile;
-    h+='<div class="card"><div class="grid2"><div><label class="f" for="t_w">الوسط (سم)</label><input id="t_w" inputmode="decimal" value="'+esc(m.waist||'')+'"></div><div><label class="f" for="t_n">الرقبة (سم)</label><input id="t_n" inputmode="decimal" value="'+esc(m.neck||'')+'"></div>'+(p.sex==='f'?'<div><label class="f" for="t_h">الورك (سم)</label><input id="t_h" inputmode="decimal" value="'+esc(m.hips||'')+'"></div>':'')+'</div><div id="t_out" style="margin-top:12px"></div><div class="muted" style="margin-top:6px">معادلة البحرية الأمريكية، تقدير تقريبي.</div></div>';
+    h+=_('<div class="card"><div class="grid2"><div><label class="f" for="t_w">الوسط (سم)</label><input id="t_w" inputmode="decimal" value="')+esc(m.waist||'')+_('"></div><div><label class="f" for="t_n">الرقبة (سم)</label><input id="t_n" inputmode="decimal" value="')+esc(m.neck||'')+'"></div>'+(p.sex==='f'?_('<div><label class="f" for="t_h">الورك (سم)</label><input id="t_h" inputmode="decimal" value="')+esc(m.hips||'')+'"></div>':'')+_('</div><div id="t_out" style="margin-top:12px"></div><div class="muted" style="margin-top:6px">معادلة البحرية الأمريكية، تقدير تقريبي.</div></div>');
   }
   return h;
 }
@@ -1003,43 +1011,43 @@ function toolCalc(){
   const o=$('#t_out');if(!o)return;
   if(U.tool==='1rm'){
     const kg=parseFloat($('#t_kg').value),r=parseInt($('#t_r').value);
-    if(!(kg>0&&r>0)){o.innerHTML='<div class="muted">اكتب الوزن والعدّات.</div>';return}
+    if(!(kg>0&&r>0)){o.innerHTML=_('<div class="muted">اكتب الوزن والعدّات.</div>');return}
     const e=kg*(1+r/30),b=r<37?kg*36/(37-r):0;const rm=Math.round(((e+(b||e))/2)*10)/10;
-    o.innerHTML='<div class="stat" style="margin-bottom:10px"><b>'+f1(rm)+' كجم</b><span>أقصى وزن لمرة واحدة (تقديري)</span></div>'+[95,90,85,80,75,70,60].map(p=>'<div class="item"><div class="grow">'+p+'%</div><b class="num">'+f1(rm*p/100)+' كجم</b></div>').join('');
+    o.innerHTML='<div class="stat" style="margin-bottom:10px"><b>'+f1(rm)+_(' كجم</b><span>أقصى وزن لمرة واحدة (تقديري)</span></div>')+[95,90,85,80,75,70,60].map(p=>'<div class="item"><div class="grow">'+p+'%</div><b class="num">'+f1(rm*p/100)+_(' كجم</b></div>')).join('');
   }else if(U.tool==='plates'){
     const kg=parseFloat($('#t_kg').value),bar=parseFloat($('#t_bar').value);
-    if(!(kg>bar)){o.innerHTML='<div class="muted">اكتب وزن أكبر من وزن البار.</div>';return}
+    if(!(kg>bar)){o.innerHTML=_('<div class="muted">اكتب وزن أكبر من وزن البار.</div>');return}
     let side=(kg-bar)/2;const out=[];[25,20,15,10,5,2.5,1.25].forEach(p=>{let c=0;while(side>=p-1e-9){side-=p;c++}if(c)out.push(c+' × '+p)});
-    o.innerHTML='<div class="stat"><b>'+(out.join(' + ')||'—')+'</b><span>على كل جنب'+(side>0.01?' (فاضل '+f1(side*2)+' كجم مش متاح)':'')+'</span></div>';
+    o.innerHTML='<div class="stat"><b>'+(out.join(' + ')||'—')+_('</b><span>على كل جنب')+(side>0.01?_(' (فاضل ')+f1(side*2)+_(' كجم مش متاح)'):'')+'</span></div>';
   }else if(U.tool==='fat'){
     const p=S.profile,w=parseFloat($('#t_w').value),n=parseFloat($('#t_n').value),hp=$('#t_h')?parseFloat($('#t_h').value):0;
     let v=NaN;
     if(w>0&&n>0&&w>n){if(p.sex==='m')v=495/(1.0324-0.19077*Math.log10(w-n)+0.15456*Math.log10(p.height))-450;else if(hp>0)v=495/(1.29579-0.35004*Math.log10(w+hp-n)+0.221*Math.log10(p.height))-450}
-    o.innerHTML=isFinite(v)&&v>0&&v<60?'<div class="stat"><b>'+f1(v)+'%</b><span>نسبة الدهون التقديرية · كتلة خالية من الدهون '+f1(p.weight*(1-v/100))+' كجم</span></div>':'<div class="muted">اكتب القياسات لحساب النسبة.</div>';
+    o.innerHTML=isFinite(v)&&v>0&&v<60?'<div class="stat"><b>'+f1(v)+_('%</b><span>نسبة الدهون التقديرية · كتلة خالية من الدهون ')+f1(p.weight*(1-v/100))+_(' كجم</span></div>'):_('<div class="muted">اكتب القياسات لحساب النسبة.</div>');
   }
 }
 
 function vSet(){
   const p=S.profile,t=targets();const sel=(v,o)=>String(v)===String(o)?' selected':'';
   let h='<div class="card"><div class="grid2">'+
-   '<div><label class="f" for="pn">الاسم</label><input id="pn" data-p="name" value="'+esc(p.name)+'"></div>'+
-   '<div><label class="f" for="ps">النوع</label><select id="ps" data-p="sex"><option value="m"'+sel(p.sex,'m')+'>ذكر</option><option value="f"'+sel(p.sex,'f')+'>أنثى</option></select></div>'+
-   '<div><label class="f" for="pa">السن</label><input id="pa" data-p="age" inputmode="numeric" value="'+p.age+'"></div>'+
-   '<div><label class="f" for="ph">الطول (سم)</label><input id="ph" data-p="height" inputmode="numeric" value="'+p.height+'"></div>'+
-   '<div><label class="f" for="pw">الوزن (كجم)</label><input id="pw" data-p="weight" inputmode="decimal" value="'+p.weight+'"></div>'+
-   '<div><label class="f" for="ptw">الوزن المستهدف</label><input id="ptw" data-p="targetWeight" inputmode="decimal" value="'+esc(p.targetWeight)+'"></div>'+
-   '<div><label class="f" for="pac">مستوى النشاط</label><select id="pac" data-p="act"><option value="1.2"'+sel(p.act,'1.2')+'>قليل</option><option value="1.375"'+sel(p.act,'1.375')+'>خفيف</option><option value="1.55"'+sel(p.act,'1.55')+'>متوسط</option><option value="1.725"'+sel(p.act,'1.725')+'>عالي</option></select></div>'+
-   '<div><label class="f" for="pg">الهدف</label><select id="pg" data-p="goal"><option value="cut"'+sel(p.goal,'cut')+'>تنشيف</option><option value="maintain"'+sel(p.goal,'maintain')+'>ثبات</option><option value="bulk"'+sel(p.goal,'bulk')+'>تضخيم</option></select></div>'+
-   '<div><label class="f" for="pp">البرنامج</label><select id="pp" data-p="program">'+Object.keys(PROGRAMS).map(k=>'<option value="'+k+'"'+sel(p.program,k)+'>'+PROGRAMS[k].n+'</option>').join('')+'</select></div>'+
-   '<div><label class="f" for="pr">راحة بين المجموعات (ث)</label><input id="pr" data-p="rest" inputmode="numeric" value="'+p.rest+'"></div>'+
-   '<div><label class="f" for="pwg">هدف المياه (لتر)</label><input id="pwg" data-p="waterL" inputmode="decimal" value="'+(p.waterL||2.5)+'"></div>'+
-   '<div><label class="f" for="pwk">هدف التمرين في الأسبوع</label><input id="pwk" data-p="weekGoal" inputmode="numeric" value="'+p.weekGoal+'"></div>'+
+   _('<div><label class="f" for="pn">الاسم</label><input id="pn" data-p="name" value="')+esc(p.name)+'"></div>'+
+   _('<div><label class="f" for="ps">النوع</label><select id="ps" data-p="sex"><option value="m"')+sel(p.sex,'m')+_('>ذكر</option><option value="f"')+sel(p.sex,'f')+_('>أنثى</option></select></div>')+
+   _('<div><label class="f" for="pa">السن</label><input id="pa" data-p="age" inputmode="numeric" value="')+p.age+'"></div>'+
+   _('<div><label class="f" for="ph">الطول (سم)</label><input id="ph" data-p="height" inputmode="numeric" value="')+p.height+'"></div>'+
+   _('<div><label class="f" for="pw">الوزن (كجم)</label><input id="pw" data-p="weight" inputmode="decimal" value="')+p.weight+'"></div>'+
+   _('<div><label class="f" for="ptw">الوزن المستهدف</label><input id="ptw" data-p="targetWeight" inputmode="decimal" value="')+esc(p.targetWeight)+'"></div>'+
+   _('<div><label class="f" for="pac">مستوى النشاط</label><select id="pac" data-p="act"><option value="1.2"')+sel(p.act,'1.2')+_('>قليل</option><option value="1.375"')+sel(p.act,'1.375')+_('>خفيف</option><option value="1.55"')+sel(p.act,'1.55')+_('>متوسط</option><option value="1.725"')+sel(p.act,'1.725')+_('>عالي</option></select></div>')+
+   _('<div><label class="f" for="pg">الهدف</label><select id="pg" data-p="goal"><option value="cut"')+sel(p.goal,'cut')+_('>تنشيف</option><option value="maintain"')+sel(p.goal,'maintain')+_('>ثبات</option><option value="bulk"')+sel(p.goal,'bulk')+_('>تضخيم</option></select></div>')+
+   _('<div><label class="f" for="pp">البرنامج</label><select id="pp" data-p="program">')+Object.keys(PROGRAMS).map(k=>'<option value="'+k+'"'+sel(p.program,k)+'>'+PROGRAMS[k].n+'</option>').join('')+'</select></div>'+
+   _('<div><label class="f" for="pr">راحة بين المجموعات (ث)</label><input id="pr" data-p="rest" inputmode="numeric" value="')+p.rest+'"></div>'+
+   _('<div><label class="f" for="pwg">هدف المياه (لتر)</label><input id="pwg" data-p="waterL" inputmode="decimal" value="')+(p.waterL||2.5)+'"></div>'+
+   _('<div><label class="f" for="pwk">هدف التمرين في الأسبوع</label><input id="pwk" data-p="weekGoal" inputmode="numeric" value="')+p.weekGoal+'"></div>'+
   '</div></div>';
-  h+='<div class="card"><h3>أهدافك اليومية</h3><div class="grid2"><div class="stat"><b>'+fmt(t.kcal)+'</b><span>سعر</span></div><div class="stat"><b>'+t.p+'</b><span>بروتين جم</span></div><div class="stat"><b>'+t.c+'</b><span>كارب جم</span></div><div class="stat"><b>'+t.f+'</b><span>دهون جم</span></div></div><div class="muted" style="margin-top:10px">معدل الحرق الأساسي '+fmt(t.bmr)+' سعر. التقدير بمعادلة Mifflin-St Jeor، مش وصفة طبية.</div></div>';
-  h+='<div class="card"><h3>الشكل</h3><div class="chips" style="margin:0">'+[['auto','تلقائي'],['light','فاتح'],['dark','داكن']].map(a=>'<button class="chip'+(S.settings.theme===a[0]?' on':'')+'" data-act="theme" data-v="'+a[0]+'">'+a[1]+'</button>').join('')+'</div></div>';
-  h+='<div class="card"><h3>البيانات</h3><div class="muted" style="margin-bottom:10px">'+(C.user?'بياناتك محفوظة في حسابك وعلى جهازك.':'بياناتك محفوظة على جهازك في المتصفح ده بس. نزّل نسخة احتياطية من وقت للتاني.')+'</div><div class="grid2"><button class="btn alt" data-act="export">نسخة احتياطية</button><button class="btn alt" data-act="exportcsv">تمارين CSV</button></div>'+
-   (U.confirmImport?'<div class="muted" style="margin:10px 0 6px">الاستيراد هيستبدل بياناتك الحالية. متأكد؟</div><div class="grid2"><button class="btn" data-act="importgo">اختار الملف</button><button class="btn alt" data-act="importno">لأ</button></div>':'<button class="btn line block" style="margin-top:10px" data-act="importask">استيراد نسخة</button>')+
-   '<div style="margin-top:10px">'+(U.confirmReset?'<div class="grid2"><button class="btn danger" data-act="resetyes">أكيد، امسح كل حاجة</button><button class="btn alt" data-act="resetno">لأ</button></div>':'<button class="btn danger block" data-act="reset">مسح كل البيانات</button>')+'</div></div>';
+  h+=_('<div class="card"><h3>أهدافك اليومية</h3><div class="grid2"><div class="stat"><b>')+fmt(t.kcal)+_('</b><span>سعر</span></div><div class="stat"><b>')+t.p+_('</b><span>بروتين جم</span></div><div class="stat"><b>')+t.c+_('</b><span>كارب جم</span></div><div class="stat"><b>')+t.f+_('</b><span>دهون جم</span></div></div><div class="muted" style="margin-top:10px">معدل الحرق الأساسي ')+fmt(t.bmr)+_(' سعر. التقدير بمعادلة Mifflin-St Jeor، مش وصفة طبية.</div></div>');
+  h+=_('<div class="card"><h3>الشكل</h3><div class="chips" style="margin:0">')+[['auto',_('تلقائي')],['light',_('فاتح')],['dark',_('داكن')]].map(a=>'<button class="chip'+(S.settings.theme===a[0]?' on':'')+'" data-act="theme" data-v="'+a[0]+'">'+a[1]+'</button>').join('')+'</div></div>';
+  h+=_('<div class="card"><h3>البيانات</h3><div class="muted" style="margin-bottom:10px">')+(C.user?_('بياناتك محفوظة في حسابك وعلى جهازك.'):_('بياناتك محفوظة على جهازك في المتصفح ده بس. نزّل نسخة احتياطية من وقت للتاني.'))+_('</div><div class="grid2"><button class="btn alt" data-act="export">نسخة احتياطية</button><button class="btn alt" data-act="exportcsv">تمارين CSV</button></div>')+
+   (U.confirmImport?_('<div class="muted" style="margin:10px 0 6px">الاستيراد هيستبدل بياناتك الحالية. متأكد؟</div><div class="grid2"><button class="btn" data-act="importgo">اختار الملف</button><button class="btn alt" data-act="importno">لأ</button></div>'):_('<button class="btn line block" style="margin-top:10px" data-act="importask">استيراد نسخة</button>'))+
+   '<div style="margin-top:10px">'+(U.confirmReset?_('<div class="grid2"><button class="btn danger" data-act="resetyes">أكيد، امسح كل حاجة</button><button class="btn alt" data-act="resetno">لأ</button></div>'):_('<button class="btn danger block" data-act="reset">مسح كل البيانات</button>'))+'</div></div>';
   return h;
 }
 
@@ -1047,43 +1055,43 @@ function vSet(){
 function pickerList(q,m){
   q=(q||'').trim();
   const list=allEx().filter(e=>(m==='الكل'||e.m===m)&&(!q||e.n.includes(q)||(e.e||'').includes(q)));
-  return list.map(e=>'<button class="btn alt block" style="margin-bottom:8px;text-align:right" data-act="pick" data-id="'+esc(e.id)+'">'+esc(e.n)+' <span class="muted">· '+esc(e.m)+(e.e?' · '+esc(e.e):'')+'</span></button>').join('')||'<div class="muted">مفيش نتايج. اعمل تمرين جديد من تحت.</div>';
+  return list.map(e=>'<button class="btn alt block" style="margin-bottom:8px;text-align:start" data-act="pick" data-id="'+esc(e.id)+'">'+esc(e.n)+' <span class="muted">· '+esc(_(e.m))+(e.e?' · '+esc(_(e.e)):'')+'</span></button>').join('')||_('<div class="muted">مفيش نتايج. اعمل تمرين جديد من تحت.</div>');
 }
 function renderLayer(){
   const L=$('#layer'),m=U.modal;
   if(!m){L.innerHTML='';return}
   let b='';
   if(m==='picker'){
-    b='<div class="row sp"><h3 style="margin:0">اختار تمرين</h3><button class="x" data-act="closemodal" aria-label="قفل">✕</button></div><input id="psearch" placeholder="دوّر على تمرين" aria-label="بحث" style="margin:10px 0" value="'+esc(U.pq)+'">'+chips([['الكل','الكل']].concat(MUSCLES.map(x=>[x,x])),U.pm,'pm')+'<div id="plist">'+pickerList(U.pq,U.pm)+'</div>'+(U.pickMode==='cplan'?'':'<div class="card" style="margin-top:10px"><h3>تمرين جديد</h3><div class="grid2"><input id="cxn" placeholder="اسم التمرين" aria-label="اسم التمرين"><select id="cxm" aria-label="العضلة">'+MUSCLES.map(x=>'<option>'+x+'</option>').join('')+'</select></div><button class="btn block" style="margin-top:10px" data-act="addcustomex">أضف التمرين</button></div>');
+    b=_('<div class="row sp"><h3 style="margin:0">اختار تمرين</h3><button class="x" data-act="closemodal" aria-label="قفل">✕</button></div><input id="psearch" placeholder="دوّر على تمرين" aria-label="بحث" style="margin:10px 0" value="')+esc(U.pq)+'">'+chips([['الكل','الكل']].concat(MUSCLES.map(x=>[x,x])),U.pm,'pm')+'<div id="plist">'+pickerList(U.pq,U.pm)+'</div>'+(U.pickMode==='cplan'?'':_('<div class="card" style="margin-top:10px"><h3>تمرين جديد</h3><div class="grid2"><input id="cxn" placeholder="اسم التمرين" aria-label="اسم التمرين"><select id="cxm" aria-label="العضلة">')+MUSCLES.map(x=>'<option value="'+x+'">'+_(x)+'</option>').join('')+_('</select></div><button class="btn block" style="margin-top:10px" data-act="addcustomex">أضف التمرين</button></div>'));
   }else if(m==='finish'&&S.active){
     const a=S.active;
-    b='<h3>خلّصت تمرينك</h3><div class="grid3" style="margin-bottom:12px"><div class="stat"><b>'+Math.max(1,Math.round((Date.now()-a.start)/60000))+'</b><span>دقيقة</span></div><div class="stat"><b>'+activeSets(a)+'</b><span>مجموعة</span></div><div class="stat"><b>'+fmt(activeVol(a))+'</b><span>كجم حجم</span></div></div><label class="f" for="fnote">ملاحظة لنفسك (اختياري)</label><textarea id="fnote" placeholder="حسّيت بإيه؟"></textarea>'+'<button class="btn block" style="margin-top:12px" data-act="savepriv">حفظ التمرين</button>'+'<button class="btn line block" style="margin-top:8px" data-act="closemodal">رجوع للتمرين</button>';
+    b=_('<h3>خلّصت تمرينك</h3><div class="grid3" style="margin-bottom:12px"><div class="stat"><b>')+Math.max(1,Math.round((Date.now()-a.start)/60000))+_('</b><span>دقيقة</span></div><div class="stat"><b>')+activeSets(a)+_('</b><span>مجموعة</span></div><div class="stat"><b>')+fmt(activeVol(a))+_('</b><span>كجم حجم</span></div></div><label class="f" for="fnote">ملاحظة لنفسك (اختياري)</label><textarea id="fnote" placeholder="حسّيت بإيه؟"></textarea>')+_('<button class="btn block" style="margin-top:12px" data-act="savepriv">حفظ التمرين</button>')+_('<button class="btn line block" style="margin-top:8px" data-act="closemodal">رجوع للتمرين</button>');
   }else if(m==='food'&&U.fs){
     const f=U.fs,fo=f.food,fav=S.favFoods.includes(fo.n),srv=isSrv(fo);
-    b='<div class="row sp"><h3 style="margin:0">'+esc(fName(fo))+'</h3><button class="chip'+(fav?' on':'')+'" data-act="favfood">'+(fav?'★ مفضلة':'☆ مفضلة')+'</button></div>';
+    b='<div class="row sp"><h3 style="margin:0">'+esc(fName(fo))+'</h3><button class="chip'+(fav?' on':'')+'" data-act="favfood">'+(fav?_('★ مفضلة'):_('☆ مفضلة'))+'</button></div>';
     if(srv){
-      b+='<div class="muted num" style="margin:6px 0 10px">للحصة: '+fmt(fo.k)+' سعر · ب '+fmt(fo.p)+' · ك '+fmt(fo.c)+' · د '+fmt(fo.f)+'</div><label class="f">الكمية (عدد الحصص)</label><div class="chips">'+[0.5,1,1.5,2,3].map(q=>'<button class="chip'+(f.qty===q?' on':'')+'" data-act="fqty" data-v="'+q+'">'+q+'</button>').join('')+'</div>'
-        +'<label class="f">الوجبة</label>'+chips(MEALS.map(x=>[x,_(x)]),f.meal,'fmeal')+'<div class="stat" style="margin:6px 0 12px"><b>'+fmt(fo.k*f.qty)+' سعر</b><span>بروتين '+fmt(fo.p*f.qty)+' جم</span></div>';
+      b+=_('<div class="muted num" style="margin:6px 0 10px">للحصة: ')+fmt(fo.k)+_(' سعر · ب ')+fmt(fo.p)+_(' · ك ')+fmt(fo.c)+_(' · د ')+fmt(fo.f)+_('</div><label class="f">الكمية (عدد الحصص)</label><div class="chips">')+[0.5,1,1.5,2,3].map(q=>'<button class="chip'+(f.qty===q?' on':'')+'" data-act="fqty" data-v="'+q+'">'+q+'</button>').join('')+'</div>'
+        +_('<label class="f">الوجبة</label>')+chips(MEALS.map(x=>[x,_(x)]),f.meal,'fmeal')+'<div class="stat" style="margin:6px 0 12px"><b>'+fmt(fo.k*f.qty)+_(' سعر</b><span>بروتين ')+fmt(fo.p*f.qty)+_(' جم</span></div>');
     }else{
-      b+='<div class="muted num" style="margin:6px 0 10px">لكل 100 '+unitLbl(fo.u)+': '+fmt(fo.k)+' سعر · ب '+f1(fo.p)+' · ك '+f1(fo.c)+' · د '+f1(fo.f)+'</div><label class="f" for="fg">الكمية ('+unitLbl(fo.u)+')</label><input id="fg" inputmode="decimal" value="'+esc(f.g)+'"><div class="chips" style="margin-top:8px">'
+      b+=_('<div class="muted num" style="margin:6px 0 10px">لكل 100 ')+unitLbl(fo.u)+': '+fmt(fo.k)+_(' سعر · ب ')+f1(fo.p)+_(' · ك ')+f1(fo.c)+_(' · د ')+f1(fo.f)+_('</div><label class="f" for="fg">الكمية (')+unitLbl(fo.u)+')</label><input id="fg" inputmode="decimal" value="'+esc(f.g)+'"><div class="chips" style="margin-top:8px">'
         +(fo.u==='ml'?[100,200,250,330,500]:[50,100,150,200,250]).map(n=>'<button class="chip'+(+f.g===n?' on':'')+'" data-act="fgset" data-v="'+n+'">'+n+'</button>').join('')
         +(fo.s||[]).map(x=>'<button class="chip" data-act="fgset" data-v="'+x.g+'">'+esc(LANG==='en'&&x.e?x.e:x.a)+' ('+x.g+')</button>').join('')+'</div>'
-        +'<label class="f">الوجبة</label>'+chips(MEALS.map(x=>[x,_(x)]),f.meal,'fmeal')+'<div class="stat" id="fcalc" style="margin:6px 0 12px">'+foodCalcHtml()+'</div>';
+        +_('<label class="f">الوجبة</label>')+chips(MEALS.map(x=>[x,_(x)]),f.meal,'fmeal')+'<div class="stat" id="fcalc" style="margin:6px 0 12px">'+foodCalcHtml()+'</div>';
     }
-    b+='<button class="btn block" data-act="foodadd">أضف</button><button class="btn line block" style="margin-top:8px" data-act="closemodal">إلغاء</button>';
+    b+=_('<button class="btn block" data-act="foodadd">أضف</button><button class="btn line block" style="margin-top:8px" data-act="closemodal">إلغاء</button>');
   }else if(m==='editmeal'&&U.em){
     const e=U.em;
-    b='<h3>تعديل الأكلة</h3><label class="f" for="em_n">الاسم</label><input id="em_n" value="'+esc(e.name)+'">'+(e.g?'<label class="f" for="em_g" style="margin-top:8px">الكمية ('+unitLbl(e.u)+')</label><input id="em_g" inputmode="decimal" value="'+esc(e.g)+'">':'')+'<div class="grid2" style="margin:8px 0"><div><label class="f" for="em_k">سعرات</label><input id="em_k" inputmode="numeric" value="'+esc(f1(e.k))+'"></div><div><label class="f" for="em_p">بروتين (جم)</label><input id="em_p" inputmode="decimal" value="'+esc(f1(e.p))+'"></div><div><label class="f" for="em_c">كارب (جم)</label><input id="em_c" inputmode="decimal" value="'+esc(f1(e.c))+'"></div><div><label class="f" for="em_f">دهون (جم)</label><input id="em_f" inputmode="decimal" value="'+esc(f1(e.f))+'"></div></div>'+chips(MEALS.map(m=>[m,_(m)]),e.meal,'emeal')+'<div class="grid2" style="margin-top:12px"><button class="btn" data-act="emsave">حفظ</button><button class="btn line" data-act="closemodal">إلغاء</button></div>';
+    b=_('<h3>تعديل الأكلة</h3><label class="f" for="em_n">الاسم</label><input id="em_n" value="')+esc(e.name)+'">'+(e.g?_('<label class="f" for="em_g" style="margin-top:8px">الكمية (')+unitLbl(e.u)+')</label><input id="em_g" inputmode="decimal" value="'+esc(e.g)+'">':'')+_('<div class="grid2" style="margin:8px 0"><div><label class="f" for="em_k">سعرات</label><input id="em_k" inputmode="numeric" value="')+esc(f1(e.k))+_('"></div><div><label class="f" for="em_p">بروتين (جم)</label><input id="em_p" inputmode="decimal" value="')+esc(f1(e.p))+_('"></div><div><label class="f" for="em_c">كارب (جم)</label><input id="em_c" inputmode="decimal" value="')+esc(f1(e.c))+_('"></div><div><label class="f" for="em_f">دهون (جم)</label><input id="em_f" inputmode="decimal" value="')+esc(f1(e.f))+'"></div></div>'+chips(MEALS.map(m=>[m,_(m)]),e.meal,'emeal')+_('<div class="grid2" style="margin-top:12px"><button class="btn" data-act="emsave">حفظ</button><button class="btn line" data-act="closemodal">إلغاء</button></div>');
   }else if(m==='editw'&&U.ew){
     const w=U.ew;
-    b='<h3>تعديل التمرين</h3><label class="f" for="ew_n">الاسم</label><input id="ew_n" value="'+esc(w.name)+'">'
-     +w.exercises.map((e,i)=>'<div class="card" style="margin-top:10px"><div class="row sp"><b>'+esc(exName(e.ex))+'</b><button class="x" data-act="ewrm" data-i="'+i+'" aria-label="شيل التمرين">✕</button></div>'
-       +e.sets.map((s,j)=>'<div class="setrow"><span class="n">'+(j+1)+'</span><input inputmode="decimal" data-ek="kg" data-ei="'+i+'" data-ej="'+j+'" value="'+esc(s.kg)+'" aria-label="الوزن كجم" placeholder="كجم"><input inputmode="numeric" data-ek="reps" data-ei="'+i+'" data-ej="'+j+'" value="'+esc(s.reps)+'" aria-label="العدّات" placeholder="عدّات"><span></span></div>').join('')
-       +'<div class="row" style="margin-top:8px"><button class="btn alt sm" data-act="ewadd" data-i="'+i+'">+ مجموعة</button>'+(e.sets.length>1?'<button class="btn alt sm" data-act="ewdel" data-i="'+i+'">− مجموعة</button>':'')+'</div></div>').join('')
-     +'<label class="f" for="ew_note" style="margin-top:10px">ملاحظة</label><input id="ew_note" value="'+esc(w.note||'')+'"><div class="grid2" style="margin-top:12px"><button class="btn" data-act="ewsave">حفظ</button><button class="btn line" data-act="closemodal">إلغاء</button></div>';
+    b=_('<h3>تعديل التمرين</h3><label class="f" for="ew_n">الاسم</label><input id="ew_n" value="')+esc(w.name)+'">'
+     +w.exercises.map((e,i)=>'<div class="card" style="margin-top:10px"><div class="row sp"><b>'+esc(exName(e.ex))+'</b><button class="x" data-act="ewrm" data-i="'+i+_('" aria-label="شيل التمرين">✕</button></div>')
+       +e.sets.map((s,j)=>'<div class="setrow"><span class="n">'+(j+1)+'</span><input inputmode="decimal" data-ek="kg" data-ei="'+i+'" data-ej="'+j+'" value="'+esc(s.kg)+_('" aria-label="الوزن كجم" placeholder="كجم"><input inputmode="numeric" data-ek="reps" data-ei="')+i+'" data-ej="'+j+'" value="'+esc(s.reps)+_('" aria-label="العدّات" placeholder="عدّات"><span></span></div>')).join('')
+       +'<div class="row" style="margin-top:8px"><button class="btn alt sm" data-act="ewadd" data-i="'+i+_('">+ مجموعة</button>')+(e.sets.length>1?'<button class="btn alt sm" data-act="ewdel" data-i="'+i+_('">− مجموعة</button>'):'')+'</div></div>').join('')
+     +_('<label class="f" for="ew_note" style="margin-top:10px">ملاحظة</label><input id="ew_note" value="')+esc(w.note||'')+_('"><div class="grid2" style="margin-top:12px"><button class="btn" data-act="ewsave">حفظ</button><button class="btn line" data-act="closemodal">إلغاء</button></div>');
   }else if(m==='routine'&&U.re){
     const r=U.re;
-    b='<h3>'+(r.id?'تعديل روتين':'روتين جديد')+'</h3><label class="f" for="rname">اسم الروتين</label><input id="rname" value="'+esc(r.name)+'">'+(r.ex.length?'<div style="margin-top:10px">'+r.ex.map((id,i)=>'<div class="item"><div class="grow">'+esc(exName(id))+'</div><button class="x" data-act="rup" data-i="'+i+'" aria-label="فوق">↑</button><button class="x" data-act="rdel" data-i="'+i+'" aria-label="شيل">✕</button></div>').join('')+'</div>':'<div class="muted" style="margin:10px 0">ضيف تمارين للروتين.</div>')+'<button class="btn alt block" style="margin:10px 0" data-act="openpick" data-v="routine">+ أضف تمرين</button><div class="grid2"><button class="btn" data-act="saveroutine">احفظ</button><button class="btn line" data-act="closemodal">إلغاء</button></div>';
+    b='<h3>'+(r.id?_('تعديل روتين'):_('روتين جديد'))+_('</h3><label class="f" for="rname">اسم الروتين</label><input id="rname" value="')+esc(r.name)+'">'+(r.ex.length?'<div style="margin-top:10px">'+r.ex.map((id,i)=>'<div class="item"><div class="grow">'+esc(exName(id))+'</div><button class="x" data-act="rup" data-i="'+i+_('" aria-label="فوق">↑</button><button class="x" data-act="rdel" data-i="')+i+_('" aria-label="شيل">✕</button></div>')).join('')+'</div>':_('<div class="muted" style="margin:10px 0">ضيف تمارين للروتين.</div>'))+_('<button class="btn alt block" style="margin:10px 0" data-act="openpick" data-v="routine">+ أضف تمرين</button><div class="grid2"><button class="btn" data-act="saveroutine">احفظ</button><button class="btn line" data-act="closemodal">إلغاء</button></div>');
   }
   L.innerHTML='<div class="modal" data-act="closemodal"><div class="sheet" data-stop="1">'+b+'</div></div>';
 }
@@ -1099,7 +1107,7 @@ const IC={
  acct:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>',
  more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'
 };
-const TABS=[['home','الرئيسية'],['train','تمرين'],['food','أكل'],['prog','تقدم'],['coach','مدربي'],['more','المزيد']];
+const TABS=[['home',_('الرئيسية')],['train',_('تمرين')],['food',_('أكل')],['prog',_('تقدم')],['coach',_('مدربي')],['more',_('المزيد')]];
 function render(){
   if(isCoach()){renderCoachApp();return}
   const views={home:vHome,train:vTrain,food:vFood,prog:vProg,coach:vCoachTab,more:vMore};
@@ -1116,7 +1124,7 @@ function tick(){
   const el=$('#elapsed');if(el&&S.active)el.textContent=mmss((Date.now()-S.active.start)/1000);
   if(U.rest){
     const left=(U.rest-Date.now())/1000;
-    if(left<=0){U.rest=null;const b=$('#restbar');if(b)b.hidden=true;toast('خلصت الراحة، كمّل');beep(880,.25);vib(250)}
+    if(left<=0){U.rest=null;const b=$('#restbar');if(b)b.hidden=true;toast(_('خلصت الراحة، كمّل'));beep(880,.25);vib(250)}
     else{const t=$('#resttime');if(t)t.textContent=mmss(left)}
   }
   const t=U.tm;
@@ -1126,7 +1134,7 @@ function tick(){
       if(t.phase==='شغل'&&t.rest>0){t.phase='راحة';t.left=t.rest;beep(520,.3);vib(150)}
       else{t.round++;if(t.round>t.rounds){t.running=false;t.phase='خلصت';t.left=0;beep(1046,.6);vib(500);if(S.tab==='more'&&S.sub==='tools'&&U.tool==='interval')render()}else{t.phase='شغل';t.left=t.work;beep(988,.3);vib(150)}}
     }
-    const v=$('#tmv');if(v)v.textContent=mmss(t.left);const p=$('#tmp');if(p)p.textContent=t.phase;const r=$('#tmr');if(r)r.textContent='جولة '+Math.min(t.round,t.rounds)+' / '+t.rounds;
+    const v=$('#tmv');if(v)v.textContent=mmss(t.left);const p=$('#tmp');if(p)p.textContent=_(t.phase);const r=$('#tmr');if(r)r.textContent=_('جولة ')+Math.min(t.round,t.rounds)+' / '+t.rounds;
   }
   if(U.sw.run){const v=$('#swv');if(v)v.textContent=mmss((U.sw.acc+Date.now()-U.sw.start)/1000)}
 }
@@ -1144,14 +1152,14 @@ function finishAndSave(pub){
     sets:ex.reduce((s,e)=>s+e.sets.length,0),volume:ex.reduce((s,e)=>s+e.sets.reduce((t,x)=>t+x.kg*x.reps,0),0),prs:ex.reduce((s,e)=>s+e.sets.filter(x=>x.pr).length,0)};
   S.workouts.push(w);
   S.active=null;U.modal=null;U.rest=null;S.tab='home';S.sub=null;save();render();window.scrollTo(0,0);
-  toast(w.prs?'اتحفظ التمرين، وكسرت '+w.prs+' رقم قياسي':'اتحفظ التمرين. كمّل على كده');
+  toast(w.prs?_('اتحفظ التمرين، وكسرت ')+w.prs+_(' رقم قياسي'):_('اتحفظ التمرين. كمّل على كده'));
 }
 function download(name,data){
   try{
     const blob=new Blob([data],{type:name.endsWith('.csv')?'text/csv;charset=utf-8':'application/json'});
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
-    setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);toast('اتنزل الملف');
-  }catch(e){toast('تعذر التنزيل')}
+    setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);toast(_('اتنزل الملف'));
+  }catch(e){toast(_('تعذر التنزيل'))}
 }
 function backupObj(){const o=JSON.parse(JSON.stringify(S));delete o.tab;delete o.sub;delete o.active;o.exportedAt=new Date().toISOString();return o}
 
@@ -1163,13 +1171,13 @@ document.addEventListener('click',function(ev){
    case 'tab':S.tab=d.v;S.sub=null;saveLocal();render();window.scrollTo(0,0);break;
    case 'sub':S.sub=d.v||null;saveLocal();render();window.scrollTo(0,0);break;
    case 'start':{const pr=PROGRAMS[S.profile.program]||PROGRAMS.ppl;const day=pr.days[+d.i];startWorkout(day.n,day.ex,pr.sets);break}
-   case 'startEmpty':startWorkout('تمرين حر',[]);break;
+   case 'startEmpty':startWorkout(_('تمرين حر'),[]);break;
    case 'repeat':{const l=S.workouts[S.workouts.length-1];if(l)startWorkout(l.name,l.exercises.map(e=>e.ex));break}
    case 'startroutine':{const r=S.routines.find(x=>x.id===d.id);if(r)startWorkout(r.name,r.ex);break}
    case 'newroutine':U.re={id:null,name:'',ex:[]};U.modal='routine';renderLayer();break;
    case 'editroutine':{const r=S.routines.find(x=>x.id===d.id);if(r){U.re={id:r.id,name:r.name,ex:r.ex.slice()};U.modal='routine';renderLayer()}break}
    case 'delroutine':S.routines=S.routines.filter(x=>x.id!==d.id);save();render();break;
-   case 'saveroutine':{const r=U.re;const nm=($('#rname')&&$('#rname').value.trim())||r.name;if(!nm||!r.ex.length){toast('اكتب اسم وضيف تمرين');break}
+   case 'saveroutine':{const r=U.re;const nm=($('#rname')&&$('#rname').value.trim())||r.name;if(!nm||!r.ex.length){toast(_('اكتب اسم وضيف تمرين'));break}
      if(r.id){const x=S.routines.find(y=>y.id===r.id);if(x){x.name=nm;x.ex=r.ex}}else S.routines.push({id:uid(),name:nm,ex:r.ex});
      U.modal=null;U.re=null;save();render();break}
    case 'rup':{const i=+d.i;if(i>0){const x=U.re.ex;[x[i-1],x[i]]=[x[i],x[i-1]];U.re.name=($('#rname')&&$('#rname').value)||U.re.name;renderLayer()}break}
@@ -1179,7 +1187,7 @@ document.addEventListener('click',function(ev){
    case 'pm':U.pm=d.v;renderLayer();break;
    case 'pick':{if(U.pickMode==='cplan'&&U.cc.edit){U.cc.edit.program.days[U.pi].ex.push(d.id);U.modal=null;renderCoachApp();break}
      if(U.pickMode==='routine'&&U.re){U.re.ex.push(d.id);U.modal='routine'}else{S.active.exercises.push(newEx(d.id));U.modal=null;saveLocal()}render();break}
-   case 'addcustomex':{const n=$('#cxn').value.trim();if(!n){toast('اكتب اسم التمرين');break}const id='cx'+uid();S.customEx.push({id,n,m:$('#cxm').value,e:'مخصص'});save();
+   case 'addcustomex':{const n=$('#cxn').value.trim();if(!n){toast(_('اكتب اسم التمرين'));break}const id='cx'+uid();S.customEx.push({id,n,m:$('#cxm').value,e:_('مخصص')});save();
      if(U.pickMode==='routine'&&U.re){U.re.ex.push(id);U.modal='routine'}else if(S.active){S.active.exercises.push(newEx(id));U.modal=null}render();break}
    case 'addset':{const e=S.active.exercises[+d.i];const l=e.sets[e.sets.length-1]||{};e.sets.push({kg:l.kg||'',reps:l.reps||'',done:false});saveLocal();render();break}
    case 'delset':{const e=S.active.exercises[+d.i];if(e.sets.length>1)e.sets.pop();saveLocal();render();break}
@@ -1187,11 +1195,11 @@ document.addEventListener('click',function(ev){
    case 'done':{const e=S.active.exercises[+d.i],s=e.sets[+d.j];s.done=!s.done;s.pr=false;
      if(s.done){U.rest=Date.now()+(+S.profile.rest||90)*1000;
        const kg=+s.kg||0,r=+s.reps||0,prev=bestEst(e.ex);let inW=0;e.sets.forEach((x,jj)=>{if(jj!==+d.j&&x.done)inW=Math.max(inW,est1(+x.kg||0,+x.reps||0))});
-       if(kg>0&&r>0&&prev>0&&est1(kg,r)>Math.max(prev,inW)+0.01){s.pr=true;toast('رقم قياسي جديد في '+exName(e.ex));vib([80,60,80])}}
+       if(kg>0&&r>0&&prev>0&&est1(kg,r)>Math.max(prev,inW)+0.01){s.pr=true;toast(_('رقم قياسي جديد في ')+exName(e.ex));vib([80,60,80])}}
      saveLocal();render();break}
    case 'restadd':if(U.rest){U.rest+=+d.v*1000;tick()}break;
    case 'restskip':U.rest=null;render();break;
-   case 'finish':if(!activeSets(S.active)){toast('علّم على مجموعة واحدة على الأقل');break}U.modal='finish';renderLayer();break;
+   case 'finish':if(!activeSets(S.active)){toast(_('علّم على مجموعة واحدة على الأقل'));break}U.modal='finish';renderLayer();break;
    case 'savepriv':finishAndSave(false);break;
    case 'cancel':U.confirmCancel=true;render();break;
    case 'cancelyes':S.active=null;U.confirmCancel=false;U.rest=null;saveLocal();render();break;
@@ -1206,31 +1214,31 @@ document.addEventListener('click',function(ev){
    case 'favfood':{const n=U.fs.food.n,i=S.favFoods.indexOf(n);if(i>=0)S.favFoods.splice(i,1);else S.favFoods.push(n);save();renderLayer();const fl=$('#flist');if(fl)fl.innerHTML=foodList($('#fsearch')?$('#fsearch').value:'');break}
    case 'foodadd':{const f=U.fs,fo=f.food;U.meal=f.meal;
      if(isSrv(fo)){U.modal=null;addMeal({name:fo.n+(f.qty!==1?' ×'+f.qty:''),k:fo.k*f.qty,p:fo.p*f.qty,c:fo.c*f.qty,f:fo.f*f.qty},f.meal)}
-     else{const g=pf($('#fg')?$('#fg').value:f.g)||0;if(!(g>0)){toast('اكتب الكمية');break}U.modal=null;addMeal(mealEntry(fo,g,f.meal),f.meal)}
-     toast('اتضافت على '+_(f.meal));break}
-   case 'addcustom':{const n=$('#dn').value.trim(),k=pf($('#dk').value);if(!n||!(k>0)){toast('اكتب الاسم والسعرات');break}addMeal({name:n,k,p:pf($('#dp').value)||0,c:pf($('#dc').value)||0,f:pf($('#dfa').value)||0});break}
-   case 'savecustom':{const n=$('#cn').value.trim(),k=pf($('#ck').value);if(!n||!(k>=0)){toast('اكتب الاسم والسعرات لكل 100');break}
+     else{const g=pf($('#fg')?$('#fg').value:f.g)||0;if(!(g>0)){toast(_('اكتب الكمية'));break}U.modal=null;addMeal(mealEntry(fo,g,f.meal),f.meal)}
+     toast(_('اتضافت على ')+_(f.meal));break}
+   case 'addcustom':{const n=$('#dn').value.trim(),k=pf($('#dk').value);if(!n||!(k>0)){toast(_('اكتب الاسم والسعرات'));break}addMeal({name:n,k,p:pf($('#dp').value)||0,c:pf($('#dc').value)||0,f:pf($('#dfa').value)||0});break}
+   case 'savecustom':{const n=$('#cn').value.trim(),k=pf($('#ck').value);if(!n||!(k>=0)){toast(_('اكتب الاسم والسعرات لكل 100'));break}
      const u=$('#cu').value==='ml'?'ml':'g',nf={n,e:'',cat:'mine',k,p:pf($('#cp').value)||0,c:pf($('#cc').value)||0,f:pf($('#cf').value)||0,u,s:[]};
      const i=S.customFoods.findIndex(x=>x.n===n);if(i>=0)S.customFoods[i]=nf;else S.customFoods.push(nf);save();
      U.fs={food:custFood(nf),g:u==='ml'?250:100,qty:1,meal:U.meal};U.modal='food';render();break}
    case 'delmeal':{const k=dkey();S.meals[k]=dayMeals(k).filter(m=>m.id!==d.id);save();render();break}
    case 'copyyest':{const y=new Date();y.setDate(y.getDate()-1);const src=dayMeals(dkey(y));const k=dkey();S.meals[k]=(S.meals[k]||[]).concat(src.map(m=>Object.assign({},m,{id:uid()})));save();render();break}
    case 'wadd':{const k=dkey(),n=+d.n;S.water[k]=Math.max(0,(S.water[k]||0)+n);U.wlast=n;save();render();break}
-   case 'wcustom':{const n=pf($('#wml').value);if(!(n>0)){toast('اكتب الكمية بالمل');break}const k=dkey();S.water[k]=(S.water[k]||0)+Math.round(n);U.wlast=Math.round(n);save();render();break}
+   case 'wcustom':{const n=pf($('#wml').value);if(!(n>0)){toast(_('اكتب الكمية بالمل'));break}const k=dkey();S.water[k]=(S.water[k]||0)+Math.round(n);U.wlast=Math.round(n);save();render();break}
    case 'wundo':{const k=dkey(),n=U.wlast||250;S.water[k]=Math.max(0,(S.water[k]||0)-n);U.wlast=0;save();render();break}
    case 'habit':{const k=dkey();const l=S.habits.log[k]||[];const i=l.indexOf(d.id);if(i>=0)l.splice(i,1);else l.push(d.id);S.habits.log[k]=l;save();render();break}
    case 'addhabit':{const n=$('#nh').value.trim();if(!n)break;S.habits.list.push({id:'h'+uid(),n});save();render();break}
    case 'delhabit':S.habits.list=S.habits.list.filter(h=>h.id!==d.id);save();render();break;
-   case 'savesleep':{const h=parseFloat($('#slh').value);if(!(h>0&&h<=24)){toast('اكتب عدد ساعات صحيح');break}const k=dkey();S.sleep[k]=Object.assign({},S.sleep[k],{h});save();render();break}
+   case 'savesleep':{const h=parseFloat($('#slh').value);if(!(h>0&&h<=24)){toast(_('اكتب عدد ساعات صحيح'));break}const k=dkey();S.sleep[k]=Object.assign({},S.sleep[k],{h});save();render();break}
    case 'sleepq':{const k=dkey();S.sleep[k]=Object.assign({h:0},S.sleep[k],{q:+d.v});save();render();break}
    case 'mood':S.mood[dkey()]=+d.v;save();render();break;
-   case 'addweight':{const v=parseFloat($('#wk').value);if(!(v>20&&v<400)){toast('اكتب وزن صحيح');break}
+   case 'addweight':{const v=parseFloat($('#wk').value);if(!(v>20&&v<400)){toast(_('اكتب وزن صحيح'));break}
      const k=dkey();S.weights=S.weights.filter(w=>w.date!==k);S.weights.push({date:k,kg:v});S.weights.sort((a,b)=>a.date<b.date?-1:1);S.profile.weight=v;save();render();break}
-   case 'addmeasure':{const e={date:dkey()};let any=false;MS.forEach(f=>{const v=parseFloat($('#m_'+f[0]).value);if(v>0){e[f[0]]=v;any=true}});if(!any){toast('اكتب قياس واحد على الأقل');break}
+   case 'addmeasure':{const e={date:dkey()};let any=false;MS.forEach(f=>{const v=parseFloat($('#m_'+f[0]).value);if(v>0){e[f[0]]=v;any=true}});if(!any){toast(_('اكتب قياس واحد على الأقل'));break}
      const i=S.measures.findIndex(x=>x.date===e.date);if(i>=0)S.measures[i]=Object.assign(S.measures[i],e);else S.measures.push(e);S.measures.sort((a,b)=>a.date<b.date?-1:1);save();render();break}
    case 'mfield':U.mfield=d.v;render();break;
    case 'ctype':U.cardioType=d.v;render();break;
-   case 'addcardio':{const min=parseFloat($('#cmin').value);if(!(min>0)){toast('اكتب المدة بالدقايق');break}const met=(CARDIO.find(c=>c[0]===U.cardioType)||[0,0,5])[2];
+   case 'addcardio':{const min=parseFloat($('#cmin').value);if(!(min>0)){toast(_('اكتب المدة بالدقايق'));break}const met=(CARDIO.find(c=>c[0]===U.cardioType)||[0,0,5])[2];
      S.cardio.push({id:uid(),date:dkey(),ts:Date.now(),type:U.cardioType,min,km:parseFloat($('#ckm').value)||0,kcal:Math.round(met*S.profile.weight*min/60)});save();render();break}
    case 'delcardio':S.cardio=S.cardio.filter(c=>c.id!==d.id);save();render();break;
    case 'calnav':{const c=U.cal;c.m+=+d.v;if(c.m<0){c.m=11;c.y--}if(c.m>11){c.m=0;c.y++}render();break}
@@ -1272,30 +1280,30 @@ document.addEventListener('click',function(ev){
    case 'cplancancel':U.cc.edit=null;U.modal=null;renderCoachApp();window.scrollTo(0,0);break;
    case 'cplansave':saveClientPlan();break;
    case 'ctd':{const a=U.cc.edit.trainDays,i=+d.i,x=a.indexOf(i);if(x>=0)a.splice(x,1);else a.push(i);a.sort((p,q)=>p-q);renderCoachApp();break}
-   case 'cpreset':{const k=$('#cpreset').value,e=U.cc.edit;if(k==='__empty')e.program={name:'',sets:'',days:[{n:'يوم 1',ex:[]}]};else{const pr=PROGRAMS[k];e.program={name:pr.n,sets:pr.sets||'',days:pr.days.map(x=>({n:x.n,ex:x.ex.slice()}))}}renderCoachApp();break}
-   case 'cdayadd':{const pg=U.cc.edit.program;pg.days.push({n:'يوم '+(pg.days.length+1),ex:[]});renderCoachApp();break}
+   case 'cpreset':{const k=$('#cpreset').value,e=U.cc.edit;if(k==='__empty')e.program={name:'',sets:'',days:[{n:_('يوم 1'),ex:[]}]};else{const pr=PROGRAMS[k];e.program={name:pr.n,sets:pr.sets||'',days:pr.days.map(x=>({n:x.n,ex:x.ex.slice()}))}}renderCoachApp();break}
+   case 'cdayadd':{const pg=U.cc.edit.program;pg.days.push({n:_('يوم ')+(pg.days.length+1),ex:[]});renderCoachApp();break}
    case 'cdayrm':U.cc.edit.program.days.splice(+d.i,1);renderCoachApp();break;
    case 'cexrm':U.cc.edit.program.days[+d.i].ex.splice(+d.j,1);renderCoachApp();break;
    case 'cexadd':U.pi=+d.i;U.pickMode='cplan';U.pq='';U.pm='الكل';U.modal='picker';renderLayer();break;
    case 'cprogclear':U.cc.edit.program=null;renderCoachApp();break;
    case 'cmeal':U.cc.meal=d.v;renderCoachApp();break;
    case 'cmdel':U.cc.edit.meals=U.cc.edit.meals.filter(x=>x.id!==d.id);renderCoachApp();break;
-   case 'cfood':{const f=findFood(d.n);if(!f)break;const g=pf($('#cfq')&&$('#cfq').value)||100;U.cc.fqty=String(g);const x=calcFood(f,g);U.cc.edit.meals.push({id:uid(),meal:U.cc.meal||'فطار',name:f.n,fid:f.n,g,u:f.u,k:x.k,p:x.p,c:x.c,f:x.f});renderCoachApp();toast('اتضافت');break}
-   case 'cmadd':{const n=($('#ccn').value||'').trim(),k=parseFloat($('#cck').value);if(!n||!(k>=0)){toast('اكتب الاسم والسعرات');break}U.cc.edit.meals.push({id:uid(),meal:U.cc.meal||'فطار',name:n,k:Math.round(k),p:parseFloat($('#ccp').value)||0,c:parseFloat($('#ccc').value)||0,f:parseFloat($('#ccf').value)||0});renderCoachApp();break}
-   case 'logplan':{const pl=activePlan(),x=((pl&&pl.meals)||[]).find(y=>y.id===d.id);if(x){const e=planItemMeal(x);addMeal(e,e.meal);toast('اتسجّل')}break}
-   case 'logplanmeal':{const pl=activePlan(),k=dkey();((pl&&pl.meals)||[]).filter(y=>y.meal===d.v).forEach(x=>(S.meals[k]=S.meals[k]||[]).push(planItemMeal(x)));save();render();toast('اتسجّلت الوجبة');break}
+   case 'cfood':{const f=findFood(d.n);if(!f)break;const g=pf($('#cfq')&&$('#cfq').value)||100;U.cc.fqty=String(g);const x=calcFood(f,g);U.cc.edit.meals.push({id:uid(),meal:U.cc.meal||'فطار',name:f.n,fid:f.n,g,u:f.u,k:x.k,p:x.p,c:x.c,f:x.f});renderCoachApp();toast(_('اتضافت'));break}
+   case 'cmadd':{const n=($('#ccn').value||'').trim(),k=parseFloat($('#cck').value);if(!n||!(k>=0)){toast(_('اكتب الاسم والسعرات'));break}U.cc.edit.meals.push({id:uid(),meal:U.cc.meal||'فطار',name:n,k:Math.round(k),p:parseFloat($('#ccp').value)||0,c:parseFloat($('#ccc').value)||0,f:parseFloat($('#ccf').value)||0});renderCoachApp();break}
+   case 'logplan':{const pl=activePlan(),x=((pl&&pl.meals)||[]).find(y=>y.id===d.id);if(x){const e=planItemMeal(x);addMeal(e,e.meal);toast(_('اتسجّل'))}break}
+   case 'logplanmeal':{const pl=activePlan(),k=dkey();((pl&&pl.meals)||[]).filter(y=>y.meal===d.v).forEach(x=>(S.meals[k]=S.meals[k]||[]).push(planItemMeal(x)));save();render();toast(_('اتسجّلت الوجبة'));break}
    case 'editmeal':{const k=dkey(),x=dayMeals(k).find(y=>y.id===d.id);if(x){U.em={id:x.id,date:k,name:mealName(x),orig:mealName(x),g:x.g||0,u:x.u||'g',b:x.b||null,fid:x.fid||'',k:x.k,p:x.p,c:x.c,f:x.f,meal:x.meal};U.modal='editmeal';renderLayer()}break}
    case 'emeal':emSync();U.em.meal=d.v;renderLayer();break;
-   case 'emsave':{emSync();const e=U.em;if(!e.name.trim()){toast('اكتب اسم الأكلة');break}const x=(S.meals[e.date]||[]).find(y=>y.id===e.id);if(x){if(e.name.trim()!==e.orig){x.name=e.name.trim();delete x.fid}else if(!x.fid)x.name=e.name.trim();if(e.g>0&&x.g)x.g=e.g;x.k=e.k;x.p=e.p;x.c=e.c;x.f=e.f;x.meal=e.meal}U.modal=null;U.em=null;save();render();toast('اتعدّلت');break}
+   case 'emsave':{emSync();const e=U.em;if(!e.name.trim()){toast(_('اكتب اسم الأكلة'));break}const x=(S.meals[e.date]||[]).find(y=>y.id===e.id);if(x){if(e.name.trim()!==e.orig){x.name=e.name.trim();delete x.fid}else if(!x.fid)x.name=e.name.trim();if(e.g>0&&x.g)x.g=e.g;x.k=e.k;x.p=e.p;x.c=e.c;x.f=e.f;x.meal=e.meal}U.modal=null;U.em=null;save();render();toast(_('اتعدّلت'));break}
    case 'editw':{const w=S.workouts.find(x=>x.id===d.id);if(w){U.ew=JSON.parse(JSON.stringify(w));U.modal='editw';renderLayer()}break}
    case 'ewadd':{ewSync();const e=U.ew.exercises[+d.i],l=e.sets[e.sets.length-1]||{kg:'',reps:''};e.sets.push({kg:l.kg,reps:l.reps});renderLayer();break}
    case 'ewdel':{ewSync();const e=U.ew.exercises[+d.i];if(e.sets.length>1)e.sets.pop();renderLayer();break}
    case 'ewrm':{ewSync();U.ew.exercises.splice(+d.i,1);renderLayer();break}
    case 'ewsave':{ewSync();const w=U.ew;const ex=w.exercises.map(e=>({ex:e.ex,sets:e.sets.map(s=>({kg:+s.kg||0,reps:+s.reps||0,pr:!!s.pr}))})).filter(e=>e.sets.length);
-     if(!ex.length){toast('لازم يفضل تمرين واحد على الأقل');break}
+     if(!ex.length){toast(_('لازم يفضل تمرين واحد على الأقل'));break}
      const x=S.workouts.find(y=>y.id===w.id);
      if(x){x.name=(w.name||'').trim()||x.name;x.note=(w.note||'').trim();x.exercises=ex;x.sets=ex.reduce((a,e)=>a+e.sets.length,0);x.volume=ex.reduce((a,e)=>a+e.sets.reduce((t,q)=>t+q.kg*q.reps,0),0);x.prs=ex.reduce((a,e)=>a+e.sets.filter(q=>q.pr).length,0)}
-     U.modal=null;U.ew=null;save();render();toast('اتعدّل التمرين');break}
+     U.modal=null;U.ew=null;save();render();toast(_('اتعدّل التمرين'));break}
    case 'cback':U.cc.edit=null;closeClient();U.cc.sel=null;U.cc.detail=null;renderCoachApp();break;
    case 'csend':sendMsg('coach',U.cc.sel&&U.cc.sel.uid);break;
    case 'copyinv':copyInv();break;
@@ -1331,7 +1339,7 @@ $('#impf').addEventListener('change',function(ev){
   const f=ev.target.files[0];ev.target.value='';if(!f)return;
   const r=new FileReader();
   r.onload=()=>{try{const o=JSON.parse(r.result);if(!o||!o.profile||!Array.isArray(o.workouts))throw 0;
-    const d=defState();S=Object.assign(d,o);S.profile=Object.assign(d.profile,o.profile);S.wu=o.wu||'cups';if(S.wu!=='ml'&&!(o.profile&&+o.profile.waterGoal>0))S.profile.waterGoal=8;migWater(S);S.settings=Object.assign({theme:'auto'},o.settings||{});S.active=null;S.tab='more';S.sub='set';S.updated=Date.now();U.confirmImport=false;applyTheme();save();render();toast('اتستورد الملف')}catch(e){toast('الملف مش نسخة Hassanfit صحيحة')}};
+    const d=defState();S=Object.assign(d,o);S.profile=Object.assign(d.profile,o.profile);S.wu=o.wu||'cups';if(S.wu!=='ml'&&!(o.profile&&+o.profile.waterGoal>0))S.profile.waterGoal=8;migWater(S);S.settings=Object.assign({theme:'auto'},o.settings||{});S.active=null;S.tab='more';S.sub='set';S.updated=Date.now();U.confirmImport=false;applyTheme();save();render();toast(_('اتستورد الملف'))}catch(e){toast(_('الملف مش نسخة Hassanfit صحيحة'))}};
   r.readAsText(f);
 });
 
